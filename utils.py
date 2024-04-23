@@ -12,7 +12,7 @@ from scipy.interpolate import RBFInterpolator, NearestNDInterpolator
 from scipy.spatial import distance
 import pyvista as pv
 import vtk
-from vmtk import vmtkscripts
+#from vmtk import vmtkscripts
 
 
 def get_dz(ds):
@@ -282,7 +282,7 @@ def rotation_matrix_from_axis_and_angle(u, theta):
 
 ##----------------------------------------------------------------------------------------------------------------------
 # Geometric analysis functions
-
+'''
 def clean_surface(surface, size_factor=0.1):
     surfaceCleaner = vmtkscripts.vmtkSurfaceKiteRemoval()
     surfaceCleaner.Surface = surface
@@ -397,3 +397,5 @@ def compute_flowrate(vtps):
 
     out = {'Q(t)': flowRate, 'Q_mean': np.mean(flowRate), 'Q_max': np.max(flowRate)}
     return out
+
+    '''
