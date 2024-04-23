@@ -11,7 +11,7 @@ import os.path as osp
 from glob import glob
 import numpy as np
 import pyvista as pv
-import utils as ut
+
 
 #use an excessive amount of comments on everything.
 #extra line of code changed
