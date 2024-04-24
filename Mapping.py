@@ -10,16 +10,16 @@ import utils as ut    #This is a seperate python file from research
 
 #NOTE: .vtp files are Paraview file formats, which is a post processing visualisation
 # tool, visualisation is for now not necessary, but important to know. check bro
-#Check check
+
 #-----------------------------------------------------------------------------------------------------------------------
 ## Options
 
 #output .vtp files (do we need to automate this? or call this code as a custom library/function)
-outputDir = r'' # path for saving resampled .vtp files
-saveName = ''   # filename of resamples .vtp files
+outputDir = r'C:\Users\lmorr\Documents\TU\23-24\BEP\Mapping_output' # path for saving resampled .vtp files
+saveName = 'Mapped_velocity_profile_test'   # filename of resamples .vtp files
 
 #Input files
-source_profile_dir = r'' # directory containing .vtp files associated to a 4D profile of the flow profile
+source_profile_dir = r'C:\Users\lmorr\Documents\TU\23-24\BEP\Velocity_profiles' # directory containing .vtp files associated to a 4D profile of the flow profile
 target_profile_fn = r''  # can be a .stl, .vtk or .vtp file (mesh file containing the inlet)
 
 
