@@ -10,7 +10,7 @@ import utils as ut    #This is a seperate python file from research
 
 #NOTE: .vtp files are Paraview file formats, which is a post processing visualisation
 # tool, visualisation is for now not necessary, but important to know. check bro
-
+#Check check
 #-----------------------------------------------------------------------------------------------------------------------
 ## Options
 
