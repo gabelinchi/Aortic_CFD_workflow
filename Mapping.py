@@ -20,7 +20,7 @@ saveName = 'Mapped_velocity_profile_test'   # filename of resamples .vtp files
 
 #Input files
 source_profile_dir = r'C:\Users\lmorr\Documents\TU\23-24\BEP\Velocity_profiles' # directory containing .vtp files associated to a 4D profile of the flow profile
-target_profile_fn = r''  # can be a .stl, .vtk or .vtp file (mesh file containing the inlet)
+target_profile_fn = r'C:\Users\lmorr\Documents\TU\23-24\BEP\Target_profile\inlet.stl'  # can be a .stl, .vtk or .vtp file (mesh file containing the inlet)
 
 
 flip_normals = True # usually set to True, but might have to change depending on target plane orientation (how to check this?)
@@ -85,7 +85,7 @@ for k in range(num_frames): #Replaces the points and velocity vectors with the n
 
 # spatial interpolation (google this but basically makes a new intepolated velocity profile based on the target points)
 interp_planes = ut.interpolate_profiles(aligned_planes, target_pts, intp_options)
-interp_planes[2].plot()
+#interp_planes[2].plot()
 
 # recenters the velocity profiles at the target profile origin (this is nice for further modifications)
 for k in range(num_frames):
