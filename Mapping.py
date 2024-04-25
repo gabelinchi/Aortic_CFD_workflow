@@ -42,7 +42,6 @@ intp_options = {
 # is a list and target_plane is a single mesh
 source_profiles = [pv.read(i) for i in sorted(glob(osp.join(source_profile_dir, '*.vtp')))]
 target_plane = pv.read(target_profile_fn)
-
 num_frames = len(source_profiles) #just takes the amount of velocity profiles
 source_pts = [source_profiles[k].points for k in range(num_frames)] # Collects for every flow profile mesh the points
 source_coms = [source_pts[k].mean(0) for k in range(num_frames)] #Collects for every flow profile mesh the COM based on the points
@@ -63,6 +62,7 @@ source_pts = [source_pts[k] - source_coms[k] for k in range(num_frames)]
 # normalize w.r.t. max coordinate norm
 targetmax = np.max(np.sqrt(np.sum(target_pts ** 2, axis=1))) #Euclidian norm to calculate the maximum distance to the origin
 pts = [source_pts[k] * targetmax for k in range(num_frames)] #Normalises the points with respect to the maximum distance to the target origin
+
 
 # rotate to align normals
 Rots = [ut.rotation_matrix_from_vectors(normals[k], target_normal) for k in range(num_frames)] #Uses utils to calculate the rotation matrices between the flow profile
@@ -85,7 +85,6 @@ for k in range(num_frames): #Replaces the points and velocity vectors with the n
 
 # spatial interpolation (google this but basically makes a new intepolated velocity profile based on the target points)
 interp_planes = ut.interpolate_profiles(aligned_planes, target_pts, intp_options)
-#interp_planes[2].plot()
 
 # recenters the velocity profiles at the target profile origin (this is nice for further modifications)
 for k in range(num_frames):
