@@ -15,9 +15,11 @@ import pyvista as pv
 wall_mesh = pv.read("wall.stl")
 outlet_mesh = pv.read("outlet.stl")
 inlet_mesh = pv.read("inlet.stl")
-wall = wall_mesh.plot()
+#wall = wall_mesh.plot()
+wall_and_inlet = wall_mesh.merge(inlet_mesh).clean() #combines two meshes and removes duplicate points
+wall_and_inlet.plot(show_edges=True)
 
-print(mesh)
+#print(mesh)
 
 #use an excessive amount of comments on everything.
 #extra line of code changed
