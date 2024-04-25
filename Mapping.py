@@ -1,15 +1,13 @@
-import sys #used to edit Python Runtime Environment (edit python run environment)
-import os #operating system functionality
-import os.path as osp #makes the software able to manipulate file paths
-import numpy as np #we know this one
-from glob import glob #returns a possibly empty list of path names that match the input pathname
-                      #which has to be a string containing a path specification in absolute or relative style
-import pyvista as pv  #3D plotting and mesh analysis for Visualisation Toolkit (which does 3D computer graphics)
-                      #Install in Anaconda prompt: pip install pyvista  
-import utils as ut    #This is a seperate python file from research
+import sys 
+import os 
+import os.path as osp 
+import numpy as np 
+from glob import glob 
+import pyvista as pv   
+import utils as ut   
 
-#NOTE: .vtp files are Paraview file formats, which is a post processing visualisation
-# tool, visualisation is for now not necessary, but important to know. check bro
+#NOTE: .vtp files are Paraview file formats
+#NOTE: This code based on the code from 'Data-driven generation of 4D velocity profiles in the aneurysmal ascending aorta' Saitta et al
 
 #-----------------------------------------------------------------------------------------------------------------------
 ## Options
@@ -51,7 +49,6 @@ target_normal = target_plane.compute_normals()['Normals'].mean(0) #Calculates th
 normals = [source_profiles[k].compute_normals()['Normals'].mean(0) for k in range(num_frames)] #Calculates the normal in the COM of the flow profiles
 if flip_normals: normals = [normals[k] * -1 for k in range(num_frames)] #Flips the normals if flip_normals is true
 
-
 #-----------------------------------------------------------------------------------------------------------------------
 ## Align source to target
 
@@ -75,7 +72,6 @@ lm_ids = [np.argmax(source_pts[k][:, 0]) for k in range(num_frames)] #Grabs the 
 Rots_final = [ut.rotation_matrix_from_vectors(pts[k][lm_ids[k], :], target_pts[leftmost_idx_on_target, :]) for k in range(num_frames)] #Calculates the final rotation matrix for in plane rotation
 pts = [Rots_final[k].dot(pts[k].T).T for k in range(num_frames)] #Does the final rotation of the velocity profile points
 vel = [Rots_final[k].dot(vel[k].T).T for k in range(num_frames)] #Does the final rotation of the velocity profile matrices
-
 
 # create new polydatas
 aligned_planes = [source_profiles[k].copy() for k in range(num_frames)] #Creates new same shaped profiles from the velocity profiles
