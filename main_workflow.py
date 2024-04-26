@@ -12,16 +12,28 @@ from glob import glob
 import numpy as np
 import pyvista as pv
 import tetgen as tet
+import trimesh as tri
+
+def extract_nodes_and_faces(unstrucuredgrid):
+    """
+    Converts a pyvista unstructured grid into an array of faces and an array of nodes
+    Written by Yarran
+    """
+    nodes = unstrucuredgrid.points
+    poly = inlet_mesh.extract_surface()
+    faces = np.asarray(poly.faces).reshape((-1, 4))[:, 1:]
+    return(nodes, faces)
 
 wall_mesh = pv.read("wall.stl")
 outlet_mesh = pv.read("outlet.stl")
 inlet_mesh = pv.read("inlet.stl")
 #wall = wall_mesh.plot()
-wall_and_inlet = wall_mesh.merge(inlet_mesh).clean() #combines two meshes and removes duplicate points
-wall_and_io = wall_and_inlet.merge(outlet_mesh).clean()
-#wall_and_io.plot(show_edges=True)
 
-# create 3D tetmesh from surface mesh
+inlet_nodes, inlet_faces = extract_nodes_and_faces(inlet_mesh)
+print(inlet_nodes)
+print(inlet_faces)
+
+""" # create 3D tetmesh from surface mesh
 tetmesh = tet.TetGen(wall_and_io)
 tetmesh.tetrahedralize(order=1, mindihedral=20, minratio=1.5)
 grid = tetmesh.grid
@@ -47,7 +59,7 @@ plotter.add_legend([[' Input Mesh ', 'r'],
                     [' Tessellated Mesh ', 'black']])
 plotter.show()
 
-#print(mesh)
+#print(mesh) """
 
 #use an excessive amount of comments on everything.
 #extra line of code changed
