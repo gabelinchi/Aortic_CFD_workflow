@@ -23,6 +23,8 @@ def ac_remesh(mesh, subdivide, cluster, plots):
     """
     remeshes a surface using pyacvd
     """
+    if cluster == 0:
+        cluster = mesh.n_points
     if plots == True:
         mesh.plot(show_edges=True)
     clus = acvd.Clustering(mesh)
@@ -35,8 +37,8 @@ def ac_remesh(mesh, subdivide, cluster, plots):
         remesh.plot(show_edges=True)
     return(remesh)
 
-inlet_remesh = ac_remesh(inlet_mesh, 5, 200, plots=True)
-wall_remesh = ac_remesh(wall_mesh,4,1000, plots=True)
+inlet_remesh = ac_remesh(inlet_mesh, 4, 0, plots=True)
+wall_remesh = ac_remesh(wall_mesh, 4, 0, plots=True)
 
 wall = wall_mesh.plot()
 wall_and_inlet = wall_remesh.merge(inlet_remesh).clean() #combines two meshes and removes duplicate points
