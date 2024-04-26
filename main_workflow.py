@@ -12,16 +12,35 @@ from glob import glob
 import numpy as np
 import pyvista as pv
 import tetgen as tet
+import pyacvd as acvd
 
 wall_mesh = pv.read("wall.stl")
 outlet_mesh = pv.read("outlet.stl")
 inlet_mesh = pv.read("inlet.stl")
 #wall = wall_mesh.plot()
-wall_and_inlet = wall_mesh.merge(inlet_mesh).clean() #combines two meshes and removes duplicate points
-wall_and_io = wall_and_inlet.merge(outlet_mesh).clean()
+#wall_and_inlet = wall_mesh.merge(inlet_mesh).clean() #combines two meshes and removes duplicate points
+#wall_and_io = wall_and_inlet.merge(outlet_mesh).clean()
 #wall_and_io.plot(show_edges=True)
 
-# create 3D tetmesh from surface mesh
+def ac_remesh(mesh, subdivide, cluster, plots):
+    """
+    remeshes a surface using pyacvd
+    """
+    if plots == True:
+        mesh.plot(show_edges=True)
+    clus = acvd.Clustering(mesh)
+    clus.subdivide(subdivide)
+    clus.cluster(cluster)
+    if plots == True:
+        clus.plot()
+    remesh = clus.create_mesh()
+    if plots == True:
+        remesh.plot(show_edges=True)
+    return(remesh)
+
+ac_remesh(inlet_mesh, 4, 200, plots=True)
+
+""" # create 3D tetmesh from surface mesh
 tetmesh = tet.TetGen(wall_and_io)
 tetmesh.tetrahedralize(order=1, mindihedral=20, minratio=1.5)
 grid = tetmesh.grid
@@ -45,7 +64,7 @@ plotter.add_mesh(subgrid, 'lightgrey', lighting=True, show_edges=True)
 plotter.add_mesh(wall_and_io, 'r', 'wireframe')
 plotter.add_legend([[' Input Mesh ', 'r'],
                     [' Tessellated Mesh ', 'black']])
-plotter.show()
+plotter.show() """
 
 #print(mesh)
 
