@@ -30,8 +30,20 @@ inlet_mesh = pv.read("inlet.stl")
 #wall = wall_mesh.plot()
 
 inlet_nodes, inlet_faces = extract_nodes_and_faces(inlet_mesh)
-print(inlet_nodes)
-print(inlet_faces)
+#print(inlet_nodes)
+#print(inlet_faces)
+
+inlet_from_arrays = pv.PolyData.from_regular_faces(inlet_nodes, inlet_faces)
+print(inlet_from_arrays)
+plotter = pv.Plotter()
+plotter.add_mesh(inlet_from_arrays, show_edges=True)
+plotter.show()
+
+inlet_remeshed_nodes, inlet_remeshed_faces = tri.remesh.subdivide_to_size(inlet_nodes, inlet_faces, 1)
+inlet_remeshed = pv.PolyData.from_regular_faces(inlet_remeshed_nodes, inlet_remeshed_faces)
+plotter = pv.Plotter()
+plotter.add_mesh(inlet_remeshed, show_edges=True)
+plotter.show()
 
 """ # create 3D tetmesh from surface mesh
 tetmesh = tet.TetGen(wall_and_io)
