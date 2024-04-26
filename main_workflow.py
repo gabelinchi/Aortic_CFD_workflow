@@ -23,6 +23,8 @@ def ac_remesh(mesh, subdivide, cluster, plots):
     """
     remeshes a surface using pyacvd
     """
+    if cluster == 0:
+        cluster = mesh.n_points * 2
     if plots == True:
         mesh.plot(show_edges=True)
     clus = acvd.Clustering(mesh)
@@ -35,15 +37,25 @@ def ac_remesh(mesh, subdivide, cluster, plots):
         remesh.plot(show_edges=True)
     return(remesh)
 
-inlet_remesh = ac_remesh(inlet_mesh, 5, 200, plots=True)
-wall_remesh = ac_remesh(wall_mesh,4,1000, plots=True)
-
-wall = wall_mesh.plot()
-wall_and_inlet = wall_remesh.merge(inlet_remesh).clean() #combines two meshes and removes duplicate points
-wall_and_io = wall_and_inlet.merge(outlet_mesh).clean()
+#Combine first
+""" wall_and_inlet = wall_mesh.merge(inlet_mesh).clean(polys_to_lines=False, strips_to_polys=False) #combines two meshes and removes duplicate points
+wall_and_io = wall_and_inlet.merge(outlet_mesh).clean(polys_to_lines=False, strips_to_polys=False)
 wall_and_io.plot(show_edges=True)
+wall_and_io_remesh = ac_remesh(wall_and_io, 3, 0, plots=True) """
+
+
+
+#mesh first, combine later
+
+inlet_remesh = ac_remesh(inlet_mesh, 6, 0, plots=True)
+wall_remesh = ac_remesh(wall_mesh, 3, 0, plots=True)
+wall = wall_mesh.plot()
+wall_and_inlet = wall_remesh.merge(inlet_remesh).clean(polys_to_lines=False, strips_to_polys=False) #combines two meshes and removes duplicate points
+wall_and_io = wall_and_inlet.merge(outlet_mesh).clean(polys_to_lines=False, strips_to_polys=False)
+wall_and_io.plot(show_edges=True)
+
 """ # create 3D tetmesh from surface mesh
-tetmesh = tet.TetGen(wall_and_io)
+tetmesh = tet.TetGen(wall_and_io_remesh)
 tetmesh.tetrahedralize(order=1, mindihedral=20, minratio=1.5)
 grid = tetmesh.grid
 grid.plot(show_edges=True)
@@ -63,7 +75,7 @@ subgrid = grid.extract_cells(cell_ind)
 # advanced plotting
 plotter = pv.Plotter()
 plotter.add_mesh(subgrid, 'lightgrey', lighting=True, show_edges=True)
-plotter.add_mesh(wall_and_io, 'r', 'wireframe')
+plotter.add_mesh(wall_and_io_remesh, 'r', 'wireframe')
 plotter.add_legend([[' Input Mesh ', 'r'],
                     [' Tessellated Mesh ', 'black']])
 plotter.show() """
