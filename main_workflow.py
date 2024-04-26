@@ -17,10 +17,7 @@ import pyacvd as acvd
 wall_mesh = pv.read("wall.stl")
 outlet_mesh = pv.read("outlet.stl")
 inlet_mesh = pv.read("inlet.stl")
-#wall = wall_mesh.plot()
-#wall_and_inlet = wall_mesh.merge(inlet_mesh).clean() #combines two meshes and removes duplicate points
-#wall_and_io = wall_and_inlet.merge(outlet_mesh).clean()
-#wall_and_io.plot(show_edges=True)
+
 
 def ac_remesh(mesh, subdivide, cluster, plots):
     """
@@ -38,8 +35,13 @@ def ac_remesh(mesh, subdivide, cluster, plots):
         remesh.plot(show_edges=True)
     return(remesh)
 
-ac_remesh(inlet_mesh, 4, 200, plots=True)
+inlet_remesh = ac_remesh(inlet_mesh, 5, 200, plots=True)
+wall_remesh = ac_remesh(wall_mesh,4,1000, plots=True)
 
+wall = wall_mesh.plot()
+wall_and_inlet = wall_remesh.merge(inlet_remesh).clean() #combines two meshes and removes duplicate points
+wall_and_io = wall_and_inlet.merge(outlet_mesh).clean()
+wall_and_io.plot(show_edges=True)
 """ # create 3D tetmesh from surface mesh
 tetmesh = tet.TetGen(wall_and_io)
 tetmesh.tetrahedralize(order=1, mindihedral=20, minratio=1.5)
