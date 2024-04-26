@@ -32,9 +32,10 @@ def ac_remesh(mesh, subdivide, cluster, plots):
     clus.cluster(cluster)
     if plots == True:
         clus.plot()
-    remesh = clus.create_mesh()
+    remesh = clus.create_mesh().clean(lines_to_points=False, polys_to_lines=False)
     if plots == True:
         remesh.plot(show_edges=True)
+        remesh.plot_normals()
     return(remesh)
 
 #Combine first
@@ -47,7 +48,7 @@ wall_and_io_remesh = ac_remesh(wall_and_io, 3, 0, plots=True) """
 
 #mesh first, combine later
 
-inlet_remesh = ac_remesh(inlet_mesh, 6, 0, plots=True)
+inlet_remesh = ac_remesh(inlet_mesh, 4, 0, plots=True)
 wall_remesh = ac_remesh(wall_mesh, 3, 0, plots=True)
 wall = wall_mesh.plot()
 wall_and_inlet = wall_remesh.merge(inlet_remesh).clean(polys_to_lines=False, strips_to_polys=False) #combines two meshes and removes duplicate points
