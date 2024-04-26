@@ -1,5 +1,5 @@
-print('Hello World!')
-print('sync')
-print("tweede test")
-print('BEP bazen')
-import numpy as np
+import pyvista as pv
+inlet_mesh = pv.read("inlet.stl")
+
+inlet = pv.plot (inlet_mesh)
+
