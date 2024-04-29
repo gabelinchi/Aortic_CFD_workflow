@@ -51,6 +51,7 @@ def tag_and_extract(mesh):
     mesh.cell_data['cell_inds'] = range(mesh.n_cells)
     mesh_edges = mesh.extract_feature_edges(**edge_kwargs)
 
+
     # first hack:
     # you'll need some way to locate corresponding pairs of edges; this is specific to your problem
     # in this example there's only one pair of edges so we'll clip with two planes
