@@ -80,7 +80,8 @@ def remove_points_and_fill(polydata, coords_to_remove, plot=False):
     coords_to_remove: numpy array (3 columns) with coords of points to be removed
     plot: boolean, determines if process stepps are plotted, false by default
 
-    Known bugs: if plotting is set to True and coords_to_remove is empty, the function fails
+    Known bugs: (1) if plotting is set to True and coords_to_remove is empty, the function fails
+                (2) if two neighbouring points are to be deleted, the resulting edgde contains a gap (in progress)
     '''
     # Convert input to polydata
     polydata = polydata.extract_surface()
@@ -97,20 +98,44 @@ def remove_points_and_fill(polydata, coords_to_remove, plot=False):
     fill_mesh = pv.PolyData()
     for point in points_to_remove:
         # Find faces containing point
-        rows_with_x = np.any(faces == point, axis=1)
+        rows_with_point = np.any(faces == point, axis=1)
 
         # Extract neighbouring points
         edge_points = []
-        for row in faces[rows_with_x]:
+        for row in faces[rows_with_point]:
             edge_points.extend(row[row != point]) 
         edge_points = np.array(list(dict.fromkeys(edge_points)))
 
-        # Delete faces containing point
-        faces = faces[~rows_with_x]
+        # Check if any of the neighbouring points is a point to be deleted (fix for bug 2)
+        duplicates_bool = np.in1d(points_to_remove, edge_points)
+        duplicates_list = points_to_remove[duplicates_bool]
+        if len(duplicates_list) == 1: 
+            print(duplicates_list)
+            neighbour = duplicates_list[0]
+            # Execute regular routine for the bordering point as well
+            #----------------------------
+            # Find faces containing point
+            rows_with_neighbour = np.any(faces == neighbour, axis=1)
 
+            # Extract neighbouring points
+            edge_points_neighbour = []
+            for row in faces[rows_with_neighbour]:
+                edge_points_neighbour.extend(row[row != neighbour]) 
+            edge_points_neighbour = np.array(list(dict.fromkeys(edge_points_neighbour)))
+            #---------------------------
+            #Add new faces and edge points together
+            edge_points = np.hstack((edge_points, edge_points_neighbour))
+            edge_points = np.array(list(dict.fromkeys(edge_points)))
+            rows_with_point = np.any([rows_with_point, rows_with_neighbour], axis=0)
+
+            
+
+        # Delete faces containing point
+        faces = faces[~rows_with_point]
+        print(edge_points)
         # Create a mesh to fill the gap and add to fill_mesh
-        fill_mesh = fill_mesh.merge(pv.PolyData(points[edge_points]).delaunay_2d())
-        fill_mesh.plot(show_edges=True)
+        if len(edge_points) > 2: #Checks if there are points to mesh
+            fill_mesh = fill_mesh.merge(pv.PolyData(points[edge_points]).delaunay_2d())
 
     # Rebuild polydata of mesh to fill (now with the gaps)
     mesh_to_fill = pv.PolyData(points, pad(faces))
