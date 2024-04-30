@@ -57,7 +57,6 @@ def point_selection(inlet, wall, adjustment, tolerance):
 
     return inlet_excess, wall_excess
 
-inlet_excess, wall_excess = point_selection(inlet, wall, adjustment, tolerance)
 
 
 
