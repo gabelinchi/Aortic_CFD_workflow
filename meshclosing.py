@@ -2,6 +2,7 @@ import pyvista as pv
 import numpy as np
 import meshio
 
+""" 
 adjustment = np.array([0,0,20])
 tolerance = 0.1 #Need to check this value and what it means. 0.1 works with the expected output nodes
 
@@ -12,9 +13,10 @@ meshio.write('wall_mmg.vtk', meshio.read('wall_mmg.mesh'))
 #import remeshed geometry
 inlet = pv.read('inlet_mmg.vtk').extract_surface()
 wall = pv.read('wall_mmg.vtk').extract_surface()
+ """
 
-
-
+'''Function that selects the points on the boundary edge that don't have a neighbouring to connect with .clean. These points will be
+removed and remeshed later in the workflow. Can be used for inlet as well as outlet (do still need to adjust code for that)'''
 def point_selection(inlet, wall, adjustment, tolerance):
     
     #Select edges
@@ -57,8 +59,6 @@ def point_selection(inlet, wall, adjustment, tolerance):
 
 inlet_excess, wall_excess = point_selection(inlet, wall, adjustment, tolerance)
 
-print(inlet_excess)
-print(wall_excess)
 
 
         
