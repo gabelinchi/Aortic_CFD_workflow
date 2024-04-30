@@ -69,6 +69,8 @@ def remove_points_and_fill(polydata, coords_to_remove, plot=False):
     polydata: pyvista.PolyData object
     coords_to_remove: numpy array (3 columns) with coords of points to be removed
     plot: boolean, determines if process stepps are plotted, false by default
+
+    Known bugs: if plotting is set to True and coords_to_remove is empty, the function fails
     '''
     # Convert input to polydata
     polydata = polydata.extract_surface()
