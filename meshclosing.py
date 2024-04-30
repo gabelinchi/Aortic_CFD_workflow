@@ -9,10 +9,12 @@ tolerance = 0.1 #Need to check this value and what it means. 0.1 works with the 
 #prep .mesh for modification with pyvista
 meshio.write('inlet_mmg.vtk', meshio.read('inlet_mmg.mesh'))
 meshio.write('wall_mmg.vtk', meshio.read('wall_mmg.mesh'))
+meshio.write('outlet_mmg.vtk', meshio.read('outlet_mmg.mesh'))
 
 #import remeshed geometry
 inlet = pv.read('inlet_mmg.vtk').extract_surface()
 wall = pv.read('wall_mmg.vtk').extract_surface()
+outlet = pv.read('outlet_mmg.vtk').extract_surface()
 
 
 '''Function that selects the points on the boundary edge that don't have a neighbouring to connect with .clean. These points will be
@@ -29,6 +31,7 @@ def point_selection(inlet_outlet, wall, adjustment, tolerance, config):
     i_o_edges = inlet_outlet.extract_feature_edges(boundary_edges=True, non_manifold_edges=False, manifold_edges=False, feature_edges=False)
     wall_edges = wall.extract_feature_edges(boundary_edges=True, non_manifold_edges=False, manifold_edges=False, feature_edges=False)
     wall_i_o_edges = wall_edges.clip(clip_axis, origin=(wall.center - adjustment))
+    wall_i_o_edges.plot()
 
     #Get points
     i_o_points = i_o_edges.points
@@ -63,16 +66,6 @@ def point_selection(inlet_outlet, wall, adjustment, tolerance, config):
 
     return i_o_excess, wall_excess
 
-
-wall_excess = point_selection(inlet, wall, adjustment, tolerance, 'inlet')[1]
-
-print(wall_excess)
-
-        
-
-
-
-    return inlet_excess, wall_excess
 
 # Function to pad an unpadded face array
 def pad(faces):
@@ -117,6 +110,7 @@ def remove_points_and_fill(polydata, coords_to_remove, plot=False):
 
         # Create a mesh to fill the gap and add to fill_mesh
         fill_mesh = fill_mesh.merge(pv.PolyData(points[edge_points]).delaunay_2d())
+        fill_mesh.plot(show_edges=True)
 
     # Rebuild polydata of mesh to fill (now with the gaps)
     mesh_to_fill = pv.PolyData(points, pad(faces))
@@ -130,7 +124,14 @@ def remove_points_and_fill(polydata, coords_to_remove, plot=False):
     return(reduced_surface) # Return pv.PolyData of the reconstructed surface
 
 
-wall_reduced = remove_points_and_fill(wall, point_selection(inlet, wall, adjustment, tolerance)[1], plot=True)
-inlet_reduced = remove_points_and_fill(inlet, point_selection(inlet, wall, adjustment, tolerance)[0])
+""" inlet_point_selection, wall_point_selection = point_selection(inlet, wall, adjustment, tolerance, 'inlet')
+inlet_reduced = remove_points_and_fill(inlet, inlet_point_selection, plot=False)
+wall_reduced = remove_points_and_fill(wall, wall_point_selection, plot=True) """
 
-wall_reduced.merge(inlet_reduced).clean(tolerance=0.1).plot(show_edges=True)
+outlet_point_selection, wall_point_selection = point_selection(outlet, wall, adjustment, tolerance, 'outlet')
+wall_reduced_reduced = remove_points_and_fill(wall, wall_point_selection, plot=True)
+outlet_reduced = remove_points_and_fill(outlet, outlet_point_selection, plot=False)
+
+(wall_reduced_reduced+outlet_reduced).plot(show_edges=True)
+
+#wall_reduced.merge(inlet_reduced).clean(tolerance=0.1).plot(show_edges=True)
