@@ -21,7 +21,7 @@ outlet = pv.read('outlet_mmg.vtk').extract_surface()
 removed and remeshed later in the workflow. Can be used for inlet as well as outlet'''
 def point_selection(inlet_outlet, wall, adjustment, tolerance, config):
     
-    #Selects clipping axis dependent if an input or output is inputted
+    #Selects clipping axis dependent if an input or output is inserted in the function
     if config == 'inlet':
         clip_axis = '-z'
     else:
