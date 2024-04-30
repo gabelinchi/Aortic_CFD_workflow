@@ -2,7 +2,7 @@ import pyvista as pv
 import numpy as np
 import meshio
 
-""" 
+
 adjustment = np.array([0,0,20])
 tolerance = 0.1 #Need to check this value and what it means. 0.1 works with the expected output nodes
 
@@ -13,7 +13,7 @@ meshio.write('wall_mmg.vtk', meshio.read('wall_mmg.mesh'))
 #import remeshed geometry
 inlet = pv.read('inlet_mmg.vtk').extract_surface()
 wall = pv.read('wall_mmg.vtk').extract_surface()
- """
+
 
 '''Function that selects the points on the boundary edge that don't have a neighbouring to connect with .clean. These points will be
 removed and remeshed later in the workflow. Can be used for inlet as well as outlet (do still need to adjust code for that)'''
@@ -57,10 +57,61 @@ def point_selection(inlet, wall, adjustment, tolerance):
 
     return inlet_excess, wall_excess
 
-inlet_excess, wall_excess = point_selection(inlet, wall, adjustment, tolerance)
+# Function to pad an unpadded face array
+def pad(faces):
+    num_rows = faces.shape[0]
+    return(np.hstack((np.full((num_rows, 1), 3),faces)))
+
+def remove_points_and_fill(polydata, coords_to_remove, plot=False):
+    '''
+    Function that removes a point from a pyvistas polydata object and remeshes the hole left behind
+
+    polydata: pyvista.PolyData object
+    coords_to_remove: numpy array (3 columns) with coords of points to be removed
+    plot: boolean, determines if process stepps are plotted, false by default
+    '''
+    # Convert input to polydata
+    polydata = polydata.extract_surface()
+
+    # Split polydata into np arrays
+    faces = polydata.faces.reshape(-1, 4)[:,[1,2,3]]
+    points = polydata.points
+
+    # Obtain point indices that match input coords
+    matches = (points == coords_to_remove[:, np.newaxis]).all(axis=2)
+    points_to_remove = np.where(matches)[1]
+
+    # Loop over points to populate fill_mesh with the pathches
+    fill_mesh = pv.PolyData()
+    for point in points_to_remove:
+        # Find faces containing point
+        rows_with_x = np.any(faces == point, axis=1)
+
+        # Extract neighbouring points
+        edge_points = []
+        for row in faces[rows_with_x]:
+            edge_points.extend(row[row != point]) 
+        edge_points = np.array(list(dict.fromkeys(edge_points)))
+
+        # Delete faces containing point
+        faces = faces[~rows_with_x]
+
+        # Create a mesh to fill the gap and add to fill_mesh
+        fill_mesh = fill_mesh.merge(pv.PolyData(points[edge_points]).delaunay_2d())
+
+    # Rebuild polydata of mesh to fill (now with the gaps)
+    mesh_to_fill = pv.PolyData(points, pad(faces))
+
+    # Combine with the patches
+    reduced_surface = fill_mesh.merge(mesh_to_fill).clean()
+    if plot==True:
+        fill_mesh.plot(show_edges=True)
+        mesh_to_fill.plot(show_edges=True)
+        reduced_surface.plot(show_edges=True)
+    return(reduced_surface) # Return pv.PolyData of the reconstructed surface
 
 
+wall_reduced = remove_points_and_fill(wall, point_selection(inlet, wall, adjustment, tolerance)[1], plot=True)
+inlet_reduced = remove_points_and_fill(inlet, point_selection(inlet, wall, adjustment, tolerance)[0])
 
-        
-
-
+wall_reduced.merge(inlet_reduced).clean(tolerance=0.1).plot(show_edges=True)
