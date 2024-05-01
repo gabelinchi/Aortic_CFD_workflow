@@ -20,8 +20,13 @@ outlet_path = "geometries\input\outlet.stl"
 adjustment = np.array([0,0,20])
 search_tolerance = 0.1 #Need to check this value and what it means. 0.1 works with the expected output nodes
 
+mmg_parameters = {
+    'mesh_density': '0.1',
+    'sizing': '1'}
+
+
 #Run remesh
-inlet_remeshed, wall_remeshed, outlet_remeshed = remesh.remesh(inlet_path, wall_path, outlet_path)
+inlet_remeshed, wall_remeshed, outlet_remeshed = remesh.remesh(inlet_path, wall_path, outlet_path, mmg_parameters)
 
 #Close remeshed meshes
 

@@ -8,7 +8,7 @@ import tetgen as tet
 import meshio
 import subprocess as sub
 
-def remesh(inlet_path, wall_path, output_path):
+def remesh(inlet_path, wall_path, output_path, parameters):
     # Convert input file from stl to .mesh
     meshio.write('inlet.mesh', meshio.read(inlet_path))
     meshio.write('wall.mesh', meshio.read(wall_path))
@@ -33,11 +33,17 @@ def remesh(inlet_path, wall_path, output_path):
     inlet_edge.save('geometries/temp/inlet_edge.ply')
     meshio.write('geometries/temp/inlet_edge.mesh', meshio.read('geometries/temp/inlet_edge.ply'))
     pv.read('geometries/temp/inlet_edge.ply').plot(show_edges=True) #plot inlet vertices """
+    density = parameters['mesh_density']
+    sizing = parameters['sizing']
+    indentation = ' '
+
+    #inlet_command = f"{'py -m mmgs -hausd'}{indentation}{density}{indentation}{'inlet.mesh inlet_mmg.mesh -hsiz'}{indentation}{sizing}"
+
 
     # Run mmg
-    sub.run('py -m mmgs -hausd 0.1 inlet.mesh inlet_mmg.mesh -hsiz 1')
-    sub.run('py -m mmgs -hausd 0.1 wall.mesh wall_mmg.mesh -hsiz 1')
-    sub.run('py -m mmgs -hausd 0.1 outlet.mesh outlet_mmg.mesh -hsiz 1')
+    sub.run(f"{'py -m mmgs -hausd'}{indentation}{density}{indentation}{'inlet.mesh inlet_mmg.mesh -hsiz'}{indentation}{sizing}")
+    sub.run(f"{'py -m mmgs -hausd'}{indentation}{density}{indentation}{'wall.mesh wall_mmg.mesh -hsiz'}{indentation}{sizing}")
+    sub.run(f"{'py -m mmgs -hausd'}{indentation}{density}{indentation}{'outlet.mesh outlet_mmg.mesh -hsiz'}{indentation}{sizing}")
 
     # Convert back to .vtk and plot with pyvista
     meshio.write('inlet_mmg.vtk', meshio.read('inlet_mmg.mesh'))
