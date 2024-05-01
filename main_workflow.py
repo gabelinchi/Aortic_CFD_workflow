@@ -24,6 +24,12 @@ mmg_parameters = {
     'mesh_density': '0.1',
     'sizing': '1'}
 
+tetgen_parameters = dict(
+    order=1, 
+    mindihedral=20, 
+    minratio=1.5
+)
+
 
 #Run remesh
 inlet_remeshed, wall_remeshed, outlet_remeshed = remesh.remesh(inlet_path, wall_path, outlet_path, mmg_parameters)
@@ -45,7 +51,7 @@ combined_mesh.plot(show_edges=True)
 
 # create 3D tetmesh from surface mesh
 tetmesh = tet.TetGen(combined_mesh)
-tetmesh.tetrahedralize(order=1, mindihedral=20, minratio=1.5)
+tetmesh.tetrahedralize(**tetgen_parameters)
 grid = tetmesh.grid
 grid.plot(show_edges=True)
 
