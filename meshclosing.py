@@ -3,24 +3,12 @@ import numpy as np
 import meshio
 
 
-adjustment = np.array([0,0,20])
-tolerance = 0.1 #Need to check this value and what it means. 0.1 works with the expected output nodes
-
-#prep .mesh for modification with pyvista
-meshio.write('inlet_mmg.vtk', meshio.read('inlet_mmg.mesh'))
-meshio.write('wall_mmg.vtk', meshio.read('wall_mmg.mesh'))
-meshio.write('outlet_mmg.vtk', meshio.read('outlet_mmg.mesh'))
-
-#import remeshed geometry
-inlet = pv.read('inlet_mmg.vtk').extract_surface()
-wall = pv.read('wall_mmg.vtk').extract_surface()
-outlet = pv.read('outlet_mmg.vtk').extract_surface()
-
-
 '''Function that selects the points on the boundary edge that don't have a neighbouring to connect with .clean. These points will be
 removed and remeshed later in the workflow. Can be used for inlet as well as outlet'''
 def point_selection(inlet_outlet, wall, adjustment, tolerance, config):
     
+    print('Start point selection')
+
     #Selects clipping axis dependent if an input or output is inserted in the function
     if config == 'inlet':
         clip_axis = '-z'
@@ -63,6 +51,7 @@ def point_selection(inlet_outlet, wall, adjustment, tolerance, config):
             if not any(distance <= tolerance for distance in distance_wall):
                 wall_excess = np.vstack([wall_excess, wall_points[n]])
 
+    print('Finished point selection')
     return i_o_excess, wall_excess
 
 
@@ -82,6 +71,7 @@ def remove_points_and_fill(polydata, coords_to_remove, plot=False):
     Known bugs: (1) if plotting is set to True and coords_to_remove is empty, the function fails
                 (2) if two neighbouring points are to be deleted, the resulting edgde contains a gap (in progress)
     '''
+    print('Start point removal and remesh')
     # Convert input to polydata
     polydata = polydata.extract_surface()
 
@@ -152,23 +142,13 @@ def remove_points_and_fill(polydata, coords_to_remove, plot=False):
     if plot==True:
         mesh_to_fill.plot(show_edges=True)
         reduced_surface.plot(show_edges=True)
+    
+    print('Finished point removal and remesh')
     return(reduced_surface) # Return pv.PolyData of the reconstructed surface
 
 
 """ inlet_point_selection, wall_point_selection = point_selection(inlet, wall, adjustment, tolerance, 'inlet')
 inlet_reduced = remove_points_and_fill(inlet, inlet_point_selection, plot=False)
 wall_reduced = remove_points_and_fill(wall, wall_point_selection, plot=True) """
-
-outlet_point_selection, wall_point_selection = point_selection(outlet, wall, adjustment, tolerance, 'outlet')
-inlet_point_selection, wall_point_selection2 = point_selection(inlet, wall, adjustment, tolerance, 'inlet')
-
-wall_reduced = remove_points_and_fill(wall, np.vstack((wall_point_selection, wall_point_selection2)))
-outlet_reduced = remove_points_and_fill(outlet, outlet_point_selection)
-inlet_reduced = remove_points_and_fill(inlet, inlet_point_selection)
-
-
-combined_mesh = (wall_reduced+outlet_reduced+inlet_reduced).clean(tolerance=0.1)
-combined_mesh.plot(show_edges=True)
-combined_mesh.extract_feature_edges(boundary_edges=True, non_manifold_edges=True, manifold_edges=False, feature_edges=False).plot()
 
 #wall_reduced.merge(inlet_reduced).clean(tolerance=0.1).plot(show_edges=True)

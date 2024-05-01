@@ -15,12 +15,14 @@ def remesh(inlet_path, wall_path, output_path):
     meshio.write('outlet.mesh', meshio.read(output_path))
 
     #import .stl's to pyvista
-    pv_wall_mesh = pv.read("geometries\input\wall.stl")
-    pv_inlet_mesh = pv.read("geometries\input\inlet.stl")
-    pv_outlet_mesh = pv.read("geometries\input\outlet.stl")
+    pv_inlet_mesh = pv.read(inlet_path)
+    pv_wall_mesh = pv.read(wall_path)
+    pv_outlet_mesh = pv.read(output_path)
 
-    pv_wall_mesh.plot(show_edges = True)
+    print('Succesfully imported geometry')
+
     pv_inlet_mesh.plot(show_edges = True)
+    pv_wall_mesh.plot(show_edges = True)
     pv_outlet_mesh.plot(show_edges = True)
 
     """ # Extract boundaries
@@ -50,6 +52,8 @@ def remesh(inlet_path, wall_path, output_path):
     wall_remeshed.plot(show_edges = True)
     outlet_remeshed.plot(show_edges = True)
 
+    print('Succesfully remeshed geometry')
+
     combined = inlet_remeshed + wall_remeshed + outlet_remeshed
     combined.plot(show_edges = True)
 
@@ -57,5 +61,3 @@ def remesh(inlet_path, wall_path, output_path):
     wall_and_inlet = wall_remeshed.merge(inlet_remeshed).clean(tolerance=0.001) #combines two meshes and removes duplicate points
     wall_and_inlet.plot(show_edges=True) """
     return inlet_remeshed, wall_remeshed, outlet_remeshed
-
-test = remesh("geometries\input\inlet.stl", "geometries\input\wall.stl", "geometries\input\outlet.stl")
