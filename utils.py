@@ -94,3 +94,31 @@ def rotation_matrix_from_axis_and_angle(u, theta):
              cos(theta) + u[2] ** 2 * (1 - cos(theta))]])
 
     return R
+
+def mesh_quality(startmesh, remesh, meshname='', plot=False):
+    '''
+    Function to assess the quality of a surface mesh. Two factors are consdidered: similarity to the input in terms of shape
+    and quality of the elements of the remesh.
+    The first metric is based on the smallest distance between each node of the starting mesh and the surface of the remesh
+    The second metric is based on the scaled jacobian of eacht cell element
+
+
+    startmesh: (pyvista.PolyData)
+    remesh: (pyvista.Polydata)
+    meshname: (str) Name for the comparison, use to keep oversight if running the function multiple times
+    plot: (bool) Show 3D plots of the quality and similarity
+
+    Returns: (mean_similarity(#lower is better), mean_quality)
+    '''
+    closest_cells, closest_points = remesh.find_closest_cell(startmesh.points, return_closest_point=True)
+    d_exact = np.linalg.norm(startmesh.points - closest_points, axis=1)
+    startmesh.point_data['absdistance'] = d_exact
+    quality = remesh.compute_cell_quality()
+    mean_similarity = np.mean(d_exact)
+    mean_quality = np.mean(quality.cell_data['CellQuality'])
+    print('Mean similarity of',meshname,'(lower is better) =', mean_similarity)
+    print('Mean quality of',meshname,' =', mean_quality)
+    if plot==True:
+        startmesh.plot(text=(meshname +' similarity to original mesh'))
+        quality.plot(text=('Cell quality of ' + meshname))
+    return(mean_similarity, mean_quality)
