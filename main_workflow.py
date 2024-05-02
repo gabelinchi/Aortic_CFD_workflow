@@ -27,8 +27,7 @@ mmg_parameters = {
 tetgen_parameters = dict(
     order=1, 
     mindihedral=20, 
-    minratio=1.5
-)
+    minratio=1.5)
 
 
 #Run remesh
