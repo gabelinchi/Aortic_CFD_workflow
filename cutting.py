@@ -1,67 +1,34 @@
-
-
 import numpy as np
-from sklearn.covariance import MinCovDet
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import pyvista as pv
 
-""" def generate_3d_data(n_samples):
-    """
-    Generate random 3D data
-    """
-    np.random.seed(0)
-    data = np.random.randn(n_samples, 3)
-    return data
+#import the inlet and the wall with pyvista
 
-def fit_3d_mce(data):
-    """
-    Fit Minimum Covariance Ellipsoid to 3D data
-    """
-    mcd = MinCovDet()
-    mcd.fit(data)
-    return mcd.location_, mcd.covariance_
+#From the inlet surface mesh extract the boundary edges
 
-def plot_3d_mce(data, center, cov):
-    """
-    Plot 3D data and Minimum Covariance Ellipsoid
-    """
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    
-    ax.scatter(data[:, 0], data[:, 1], data[:, 2], c='b', marker='o', label='Data points')
-    
-    # Plot ellipsoid
-    u, s, vh = np.linalg.svd(cov)
-    radii = np.sqrt(s)
-    u *= radii[0]
-    vh *= radii[1]
-    vh = vh.T
-    for i in range(0, 360, 45):
-        phi = i * np.pi / 180
-        r = np.array([[np.cos(phi), -np.sin(phi)], [np.sin(phi), np.cos(phi)]])
-        ellipse = np.dot(u, np.dot(r, vh)) + center
-        ax.plot(ellipse[:, 0], ellipse[:, 1], ellipse[:, 2], 'r')
-    
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    ax.legend()
-    plt.show()
+#Calculate the centernode of the inlet mesh and the normal of the centernode
 
-# Generate 3D data
-data = generate_3d_data(100)
+#Calculate the area of the inlet edgeprofile
 
-print(data)
-# Fit MCE to the data
-center, cov = fit_3d_mce(data)
-print(center)
-# Plot data and MCE
-plot_3d_mce(data, center, cov) """
+#Create empty storage variables, for centernodes/centernormals/edgeprofiles/areas
 
+#Use the inlet information calculated above as initial values in the storage variables (append) and and make the centernode and normal equal to a calculation variable
 
+#Creat count variable starting at 0
 
+#Create a while loop with a max count around 100 or something
+    #In while loop
+    #Create a new point by adding the directional vector to the centernode of the previous edgeprofile (previous iteration)
+    #Use this new point and the previous directional vector to make a cut of the wall mesh
+    #Extract the edge profile (temporary) and isolate the profile (with connectivity) which we want to continue working with
+    #From the isolated profile (temporary), calculate the new center point
+    #Calculate the relative vector from the centernode of the previous edgeprofile (previous iteration) and the new center point
+    #Normalise this vector and make a new cut of the wall mesh with the new center point and the new normalised directional vector (also isolate this edgeprofile again)
+    #Store the new center point, the normalised directional vector, the last (second) edge profile and the area of the last edge profile in the storage variables
+    #Make the calculation variables the new center point and the new normalised directional vector
+    #Calculate the distance of the new center point and the center point of the inlet, if the distance is larger than a certain threshold. We break the while loop
 
-
+#Select the centernode and the directional vector for the final cut, based on area criteria (this is more refined, but do this after prove of concept for the previous stage)
+#Do the final cut of the wall geometry
 
 
 
