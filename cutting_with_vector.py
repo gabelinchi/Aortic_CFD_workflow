@@ -41,9 +41,9 @@ def cut(point, normal, wall, plot=False):
         plt.show()
 
     # Extract geometry to keep from reg2
-    reg2.plot()
-    reg2 = reg2.connectivity('closest', point)
-    reg2.plot()
+    reg2 = reg2.connectivity('all')
+    keep_id = reg2.point_data['RegionId'][reg2.find_closest_point(point)]
+    reg2 = reg2.extract_cells(np.where(reg2.cell_data['RegionId'] == keep_id)[0])
     
     # Extract geometry to keep from reg1
     reg1 = reg1.connectivity('all')
