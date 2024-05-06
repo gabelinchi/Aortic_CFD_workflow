@@ -80,6 +80,8 @@ while count < 200:
 
 #Select the centernode and the directional vector for the final cut, based on area criteria (this is more refined, but do this after prove of concept for the previous stage)
 
+
+
 #Do the final cut of the wall geometry
 
 
