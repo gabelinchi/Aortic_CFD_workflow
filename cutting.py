@@ -3,9 +3,6 @@ import pyvista as pv
 import utils as ut
 import cutting_with_vector as cwv
 
-#import the inlet and the wall with pyvista
-inlet = pv.read("geometries\input\inlet.stl")
-wall = pv.read("geometries\input\wall.stl")
 
 #main function that runs the cutter script
 def main_cutter(inlet, wall, plot=False):
@@ -125,16 +122,6 @@ def areaselection(areas):
     smallest_index_calc = np.where(smallest_area == areas)
     smallest_area_index = smallest_index_calc[0]
     return smallest_area, smallest_area_index
-
-
-#Select the centernode and the directional vector for the final cut, based on area criteria (this is more refined, but do this after prove of concept for the previous stage)
-
-geometry = main_cutter(inlet, wall, plot=True)
-
-geometry.plot()
-
-
-#Do the final cut of the wall geometry
 
 
 

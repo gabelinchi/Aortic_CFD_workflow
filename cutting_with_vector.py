@@ -9,16 +9,6 @@ import remesh
 import meshclosing
 import utils as ut
 
-#paths to the aorta geometry
-inlet_path = "geometries\input\inlet.stl"
-wall_path = "geometries\input\wall.stl"
-outlet_path = "geometries\input\outlet.stl"
-
-# Import geomtetry to pv
-
-inlet = pv.read(inlet_path)
-outlet = pv.read(outlet_path)
-wall = pv.read(wall_path)
 
 def cut(point, normal, wall, plot=False):
     """
@@ -81,5 +71,3 @@ def get_clip_perimeter(point, normal, wall, plot=False):
         edges.plot()
         edge.plot()
     return(edge)
-
-#get_clip_perimeter((0,0,20),(0,0,1), wall, plot=True)
