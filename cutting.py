@@ -56,7 +56,7 @@ def centerline(inlet, wall):
         new_center = inter_profile_points.mean(0)    
         print(new_center)
         #Calculate the normalised relative vector from the centernode of the previous edgeprofile (previous iteration) and the new center point
-        new_normal = np.subtract(new_center, center)
+        new_normal = ut.normalise(np.subtract(new_center, center))
 
         #Make a new cut of the wall mesh with the new center point and the new normalised directional vector (also isolate this edgeprofile again)
         new_profile = cwv.get_clip_perimeter(new_center, new_normal, wall)
