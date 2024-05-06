@@ -97,3 +97,10 @@ def rotation_matrix_from_axis_and_angle(u, theta):
              cos(theta) + u[2] ** 2 * (1 - cos(theta))]])
 
     return R
+
+#returns a normalised vector
+def normalise(v):
+    norm = np.linalg.norm(v)
+    if norm == 0: 
+       return v
+    return v / norm
