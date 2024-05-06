@@ -20,7 +20,7 @@ inlet = pv.read(inlet_path)
 outlet = pv.read(outlet_path)
 wall = pv.read(wall_path)
 
-def cut(point, normal, wall):
+def cut(point, normal, wall, plot=False):
     """
     Function that cuts a vessel geometry along a plane defined by a point & vector, and keeps all regions upstream
     of the point.
@@ -33,6 +33,12 @@ def cut(point, normal, wall):
     # Clip geometry
     reg1, reg2 = wall.clip(normal=normal, origin=point, return_clipped=True) #reg2 is in direction of vector
 
+    if plot==True:
+        plt = pv.Plotter()
+        plt.add_mesh(reg1, style= 'wireframe', color='green')
+        plt.add_mesh(reg2, style= 'wireframe', color='red')
+        plt.show()
+
     # Extract geometry to keep from reg2
     reg2 = reg2.connectivity('closest', point)
 
@@ -44,9 +50,11 @@ def cut(point, normal, wall):
     # Recombine regions
     clipped = reg1.merge(reg2).clean()
 
+    if plot==True:
+        clipped.plot()
     return(clipped)
 
-def get_clip_perimeter(point, normal, wall):
+def get_clip_perimeter(point, normal, wall, plot=False):
     '''
     Function that cuts a vessel geometry along a plane defined by a point & vector, and returns the resulting perimeter
     :arg1 point: numpy array, xyz
@@ -56,7 +64,8 @@ def get_clip_perimeter(point, normal, wall):
     returns pyvista PolyData of the perimeter resulting from the cut
     '''
     # Clip geometry
-    clipped = wall.clip(normal=normal, origin=point) #reg2 is in direction of vector
+    normal=np.array(normal)
+    clipped = wall.clip(normal=(normal * -1), origin=point) 
 
     # Extract edges
     edges = clipped.extract_feature_edges(boundary_edges=True, non_manifold_edges=False, manifold_edges=False, feature_edges=False)
@@ -64,5 +73,9 @@ def get_clip_perimeter(point, normal, wall):
     # Extract edge closest to point
     edge = edges.connectivity('closest', point)
 
+    if plot==True:
+        edges.plot()
+        edge.plot()
     return(edge)
 
+get_clip_perimeter((0,0,20),(0,0,1), wall, plot=True)
