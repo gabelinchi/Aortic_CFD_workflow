@@ -37,11 +37,14 @@ def cut(point, normal, wall, plot=False):
         plt = pv.Plotter()
         plt.add_mesh(reg1, style= 'wireframe', color='green')
         plt.add_mesh(reg2, style= 'wireframe', color='red')
+        plt.add_points(point)
         plt.show()
 
     # Extract geometry to keep from reg2
+    reg2.plot()
     reg2 = reg2.connectivity('closest', point)
-
+    reg2.plot()
+    
     # Extract geometry to keep from reg1
     reg1 = reg1.connectivity('all')
     del_id = reg1.point_data['RegionId'][reg1.find_closest_point(point)]
@@ -78,4 +81,4 @@ def get_clip_perimeter(point, normal, wall, plot=False):
         edge.plot()
     return(edge)
 
-get_clip_perimeter((0,0,20),(0,0,1), wall, plot=True)
+#get_clip_perimeter((0,0,20),(0,0,1), wall, plot=True)

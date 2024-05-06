@@ -7,6 +7,38 @@ import cutting_with_vector as cwv
 inlet = pv.read("geometries\input\inlet.stl")
 wall = pv.read("geometries\input\wall.stl")
 
+#main function that runs the cutter script
+def main_cutter(inlet, wall, plotter):
+
+    #Calculates areas along the centerline of the aorta (only first 40 mm). Also outputs nodes/normals and edge profiles for the final cut and visualisation
+    centernodes, centernormals, edgeprofiles, slice_areas = centerline(inlet, wall)
+
+    #Plots the centerline
+    if plotter:
+        plt = pv.Plotter()
+        plt.add_mesh(wall, style ='wireframe')
+        plt.add_points(centernodes, color = 'red')
+        plt.show()
+        edgeprofiles.plot()
+
+    #Calculates the smallest area across the first 40mm of the inlet
+    smallest_area, smallest_area_index = areaselection(slice_areas)
+
+    print('Smallest cross-section: ',smallest_area)
+
+    #Calculates the normal in the final cutting plane centerpoint
+    normal_sum = np.array([0, 0, 0])
+    for i in range(4):
+        normal_sum = np.add(normal_sum, centernormals[smallest_area_index - i])
+
+    normal_final = (centernormals[smallest_area_index]).flatten()#ut.normalise(normal_sum)
+    center_final = centernodes[smallest_area_index].flatten()
+
+    print(normal_final)
+    print(center_final)
+    new_geometry = cwv.cut(center_final, normal_final, wall, plot=True)    
+    return new_geometry
+
 def centerline(inlet, wall):
     #From the inlet surface mesh extract the boundary edges
     inlet_boundary = inlet.extract_feature_edges(boundary_edges=True, non_manifold_edges=False, manifold_edges=False, feature_edges=False)
@@ -16,8 +48,6 @@ def centerline(inlet, wall):
     inlet_centerpoint = inlet_points.mean(0)
     inlet_normal = inlet.compute_normals()['Normals'].mean(0)
 
-    print('inletnode', inlet_centerpoint)
-    print('inlet_normal', inlet_normal)
     #Calculate the area of the inlet edgeprofile
     inlet_area = inlet.area
 
@@ -45,18 +75,16 @@ def centerline(inlet, wall):
 
         #Create a new point by adding the directional vector to the centernode of the previous edgeprofile (previous iteration)
         inter_center = np.add(center, normal)
-        print(inter_center)
         #Use this new point and the previous directional vector to make a cut of the wall mesh
 
         inter_profile = cwv.get_clip_perimeter(inter_center, normal, wall) #Extract the edge profile (temporary) and isolate the profile (with connectivity) which we want to continue working with
-        check = wall + inter_profile
-        check.plot()
         #From the isolated profile (temporary), calculate the new center point
         inter_profile_points = inter_profile.points
         new_center = inter_profile_points.mean(0)    
-        print(new_center)
         #Calculate the normalised relative vector from the centernode of the previous edgeprofile (previous iteration) and the new center point
-        new_normal = ut.normalise(np.subtract(new_center, center))
+        A = np.subtract(inter_center, center)
+        B =  0.1 * np.subtract(new_center, inter_center)
+        new_normal = ut.normalise(np.add(A, B))
 
         #Make a new cut of the wall mesh with the new center point and the new normalised directional vector (also isolate this edgeprofile again)
         new_profile = cwv.get_clip_perimeter(new_center, new_normal, wall)
@@ -72,7 +100,7 @@ def centerline(inlet, wall):
         slice_areas = np.append(slice_areas, new_area)
 
         #Calculate the distance of the new center point and the center point of the inlet, if the distance is larger than a certain threshold. We break the while loop
-        if np.linalg.norm(new_center - center) <= 20:
+        if np.linalg.norm(new_center - inlet_centerpoint) >= 40:
             break
 
         #Make the calculation variables the new center point and the new normalised directional vector
@@ -83,21 +111,30 @@ def centerline(inlet, wall):
     
     return centernodes, centernormals, edgeprofiles, slice_areas
 
+def areaselection(areas):
+    # Find the indices where the tube transitions from wide to narrow and narrow to wide
+    diff_areas = np.diff(areas)
+    transition_indices = np.where(np.logical_or(diff_areas < 0, diff_areas == 0))[0]
 
-centernodes, centernormals, edgeprofiles, slice_areas = centerline(inlet, wall)
+    #Find the areas between these transition points
+    area_segments = np.split(areas, transition_indices + 1)
 
-plt = pv.Plotter()
-plt.add_mesh(wall, style ='wireframe')
-plt.add_points(centernodes, color = 'red')
-plt.show()
+    #Select the segments that have a narrow part and are larger than 1. This result in multiple arrays that go from a smaller to a larger area
+    narrow_segments = [segment for segment in area_segments if len(segment) > 1 and segment[0] < segment[-1]]
 
-print('nodes', centernodes)
-print('normals', centernormals)
-edgeprofiles.plot()
-print('areas', slice_areas)
+    #Select the smallest area from the last small segment (might want to find a smarter solution for this, but for now this works)
+    smallest_area = min(narrow_segments[1]) #Gives out of bound error when there is no constriction
+
+    smallest_index_calc = np.where(smallest_area == areas)
+    smallest_area_index = smallest_index_calc[0]
+    return smallest_area, smallest_area_index
+
 
 #Select the centernode and the directional vector for the final cut, based on area criteria (this is more refined, but do this after prove of concept for the previous stage)
 
+geometry = main_cutter(inlet, wall, True)
+
+geometry.plot()
 
 
 #Do the final cut of the wall geometry

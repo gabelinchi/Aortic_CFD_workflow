@@ -16,8 +16,10 @@ def areaselection(areas):
     narrow_segments = [segment for segment in area_segments if len(segment) > 1 and segment[0] < segment[-1]]
 
     #Select the smallest area from the last small segment (might want to find a smarter solution for this, but for now this works)
-    smallest_area = min(narrow_segments[-1])
+    smallest_area = min(narrow_segments[1]) #Gives out of bound error when there is no constriction
 
     smallest_index_calc = np.where(smallest_area == areas)
     smallest_area_index = smallest_index_calc[0]
     return smallest_area, smallest_area_index
+
+x, y = areaselection(areas)
