@@ -51,7 +51,8 @@ def cut(point, normal, wall, plot=False):
     reg1 = reg1.extract_cells(np.where(reg1.cell_data['RegionId'] != del_id)[0])
 
     # Recombine regions
-    clipped = reg1.merge(reg2).clean().clear_data()
+    clipped = reg1.merge(reg2).clean()
+    clipped.clear_data()
 
     if plot==True:
         clipped.plot()

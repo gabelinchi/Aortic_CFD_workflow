@@ -27,7 +27,7 @@ def main_cutter(inlet, wall, plot=False):
     print('Smallest cross-section: ',smallest_area)
 
     #Calculates the normal in the final cutting plane centerpoint
-    normal_final = (centernormals[smallest_area_index]).flatten()#ut.average_normal(centernormals, 4, smallest_area_index)
+    normal_final = ut.average_normal(centernormals, 4, smallest_area_index)
     #Final centernode
     center_final = centernodes[smallest_area_index].flatten()
 

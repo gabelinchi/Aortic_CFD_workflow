@@ -108,5 +108,6 @@ def average_normal(vector, size, index):
     normal_sum = np.array([0, 0, 0])
     for i in range(size):
         normal_sum = np.add(normal_sum, vector[index - i])
-    average_normal = normalise(normal_sum).flatten
-    return average_normal
+    average_normal = normalise(normal_sum)
+    average_normal_flat = average_normal.flatten()
+    return average_normal_flat
