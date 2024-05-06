@@ -8,13 +8,13 @@ inlet = pv.read("geometries\input\inlet.stl")
 wall = pv.read("geometries\input\wall.stl")
 
 #main function that runs the cutter script
-def main_cutter(inlet, wall, plotter):
+def main_cutter(inlet, wall, plot=False):
 
     #Calculates areas along the centerline of the aorta (only first 40 mm). Also outputs nodes/normals and edge profiles for the final cut and visualisation
     centernodes, centernormals, edgeprofiles, slice_areas = centerline(inlet, wall)
 
     #Plots the centerline
-    if plotter:
+    if plot:
         plt = pv.Plotter()
         plt.add_mesh(wall, style ='wireframe')
         plt.add_points(centernodes, color = 'red')
@@ -27,11 +27,8 @@ def main_cutter(inlet, wall, plotter):
     print('Smallest cross-section: ',smallest_area)
 
     #Calculates the normal in the final cutting plane centerpoint
-    normal_sum = np.array([0, 0, 0])
-    for i in range(4):
-        normal_sum = np.add(normal_sum, centernormals[smallest_area_index - i])
-
-    normal_final = (centernormals[smallest_area_index]).flatten()#ut.normalise(normal_sum)
+    normal_final = (centernormals[smallest_area_index]).flatten()#ut.average_normal(centernormals, 4, smallest_area_index)
+    #Final centernode
     center_final = centernodes[smallest_area_index].flatten()
 
     print(normal_final)
@@ -132,7 +129,7 @@ def areaselection(areas):
 
 #Select the centernode and the directional vector for the final cut, based on area criteria (this is more refined, but do this after prove of concept for the previous stage)
 
-geometry = main_cutter(inlet, wall, True)
+geometry = main_cutter(inlet, wall, plot=True)
 
 geometry.plot()
 

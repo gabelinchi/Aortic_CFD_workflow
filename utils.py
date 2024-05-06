@@ -102,3 +102,11 @@ def normalise(v):
     if norm == 0: 
        return v
     return v / norm
+
+#Calculates the average normal vector based on past entries.
+def average_normal(vector, size, index):
+    normal_sum = np.array([0, 0, 0])
+    for i in range(size):
+        normal_sum = np.add(normal_sum, vector[index - i])
+    average_normal = normalise(normal_sum).flatten
+    return average_normal
