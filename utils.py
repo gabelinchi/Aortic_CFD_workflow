@@ -94,3 +94,19 @@ def rotation_matrix_from_axis_and_angle(u, theta):
              cos(theta) + u[2] ** 2 * (1 - cos(theta))]])
 
     return R
+
+#returns a normalised vector
+def normalise(v):
+    norm = np.linalg.norm(v)
+    if norm == 0: 
+       return v
+    return v / norm
+
+#Calculates the average normal vector based on past entries.
+def average_normal(vector, size, index):
+    normal_sum = np.array([0, 0, 0])
+    for i in range(size):
+        normal_sum = np.add(normal_sum, vector[index - i])
+    average_normal = normalise(normal_sum)
+    average_normal_flat = average_normal.flatten()
+    return average_normal_flat

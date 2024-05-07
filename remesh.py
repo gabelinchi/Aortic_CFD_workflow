@@ -8,22 +8,23 @@ import tetgen as tet
 import meshio
 import subprocess as sub
 
-def remesh(inlet_path, wall_path, output_path, parameters):
+def remesh(inlet_path, wall_path, output_path, parameters, plot=False):
     # Convert input file from stl to .mesh
     meshio.write('inlet.mesh', meshio.read(inlet_path))
     meshio.write('wall.mesh', meshio.read(wall_path))
     meshio.write('outlet.mesh', meshio.read(output_path))
 
-    #import .stl's to pyvista
-    pv_inlet_mesh = pv.read(inlet_path)
-    pv_wall_mesh = pv.read(wall_path)
-    pv_outlet_mesh = pv.read(output_path)
-
     print('Succesfully imported geometry')
 
-    pv_inlet_mesh.plot(show_edges = True)
-    pv_wall_mesh.plot(show_edges = True)
-    pv_outlet_mesh.plot(show_edges = True)
+    if plot:
+        #import .stl's to pyvista
+        pv_inlet_mesh = pv.read(inlet_path)
+        pv_wall_mesh = pv.read(wall_path)
+        pv_outlet_mesh = pv.read(output_path)
+
+        pv_inlet_mesh.plot(show_edges = True)
+        pv_wall_mesh.plot(show_edges = True)
+        pv_outlet_mesh.plot(show_edges = True)
 
     """ # Extract boundaries
     inlet_edge = pv_inlet_mesh.extract_feature_edges(manifold_edges=False, non_manifold_edges=False, feature_edges = False, boundary_edges=True)
@@ -60,10 +61,41 @@ def remesh(inlet_path, wall_path, output_path, parameters):
 
     print('Succesfully remeshed geometry')
 
-    combined = inlet_remeshed + wall_remeshed + outlet_remeshed
-    combined.plot(show_edges = True)
+    if plot:
+        combined = inlet_remeshed + wall_remeshed + outlet_remeshed
+        combined.plot(show_edges = True)
 
     """ # Merge and plot with pv
     wall_and_inlet = wall_remeshed.merge(inlet_remeshed).clean(tolerance=0.001) #combines two meshes and removes duplicate points
     wall_and_inlet.plot(show_edges=True) """
     return inlet_remeshed, wall_remeshed, outlet_remeshed
+
+def remesh_edge_detect(mesh, parameters, plot=False):
+    '''
+    Remeshes geometry using mmg with edge detection
+    Detection angle and filenames are still hardcoded, should be fixed
+    mesh must be pyvista PolyData
+    '''
+    if plot==True:
+        mesh.plot(show_edges = True)
+
+    density = parameters['mesh_density']
+    sizing = parameters['sizing']
+    indentation = ' '
+
+    # Convert to .mesh
+    mesh.save('wall_and_io.ply')
+    meshio.write('wall_and_io.mesh', meshio.read('wall_and_io.ply'))
+
+    # Run mmg
+    sub.run(f"{'py -m mmgs -ar 35 -hausd'}{indentation}{density}{indentation}{'wall_and_io.mesh wall_and_io_mmg.mesh -hsiz'}{indentation}{sizing}")
+
+    # Convert back to .vtk and plot with pyvista
+    meshio.write('wall_and_io_mmg.vtk', meshio.read('wall_and_io_mmg.mesh'))
+    wall_and_io_remeshed = pv.read('wall_and_io_mmg.vtk')
+
+    if plot==True:
+        wall_and_io_remeshed.plot(show_edges = True)
+
+    print('Succesfully remeshed geometry')
+    return wall_and_io_remeshed
