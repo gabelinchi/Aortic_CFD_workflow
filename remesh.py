@@ -70,32 +70,30 @@ def remesh(inlet_path, wall_path, output_path, parameters, plot=False):
     wall_and_inlet.plot(show_edges=True) """
     return inlet_remeshed, wall_remeshed, outlet_remeshed
 
-def remesh_edge_detect(mesh, parameters, plot=False):
+def remesh_edge_detect(in_path, out_path, parameters, plot=False):
     '''
-    Remeshes geometry using mmg with edge detection
+    Remeshes geometry using mmg with edge detection, saves a .mesh and returns pyvista PolyData/UnstructuredGrid
     Detection angle and filenames are still hardcoded, should be fixed
-    mesh must be pyvista PolyData
+    :in_path : path to input file (.mesh)
+    :out_path : path to output file (.mesh)
+    :parameters : dict of mmg parameters
+    :plot : bool, show intermediate plots
+    :returns : PyvistaPolydata of the remeshed geo
     '''
-    if plot==True:
-        mesh.plot(show_edges = True)
-
     density = parameters['mesh_density']
     sizing = parameters['sizing']
-    indentation = ' '
-
-    # Convert to .mesh
-    mesh.save('wall_and_io.ply')
-    meshio.write('wall_and_io.mesh', meshio.read('wall_and_io.ply'))
+    angle = parameters['detection angle']
+    ind = ' '
 
     # Run mmg
-    sub.run(f"{'py -m mmgs -ar 35 -hausd'}{indentation}{density}{indentation}{'wall_and_io.mesh wall_and_io_mmg.mesh -hsiz'}{indentation}{sizing}")
+    sub.run(f"{'py -m mmgs -ar'}{ind}{angle}{ind}{'-hausd'}{ind}{density}{ind}{in_path}{ind}{out_path}{ind}{'-hsiz'}{ind}{sizing}")
 
     # Convert back to .vtk and plot with pyvista
-    meshio.write('wall_and_io_mmg.vtk', meshio.read('wall_and_io_mmg.mesh'))
-    wall_and_io_remeshed = pv.read('wall_and_io_mmg.vtk')
+    meshio.write('temp_for_plot_remesh.vtk', meshio.read(out_path))
+    remeshed = pv.read('temp_for_plot_remesh.vtk')
 
     if plot==True:
-        wall_and_io_remeshed.plot(show_edges = True)
+        remeshed.plot(show_edges = True)
 
     print('Succesfully remeshed geometry')
-    return wall_and_io_remeshed
+    return(remeshed)

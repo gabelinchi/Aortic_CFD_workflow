@@ -1,14 +1,8 @@
-import numpy as np
 import pyvista as pv
-import cutting as cutting
+import numpy as np
 
-inlet_path = "geometries\input\inlet.stl"
-wall_path = "geometries\input\wall.stl"
-
-inlet = pv.read(inlet_path)
-wall = pv.read(wall_path)
-
-wall_cut = cutting.main_cutter(inlet, wall, plot=True)
+#wall_path = "geometries\input\wall.stl"
+#wall = pv.read(wall_path)
 
 def cap(wall, plot=False):
     '''
@@ -16,6 +10,7 @@ def cap(wall, plot=False):
     Inlet & outlet are assigned based on the number of nodes, cap with the most nodes becomes the inlet by default
     :wall : Pyvista Polydata/UnstructuredGrid of the wall geometry
     :plot : bool, show intermediate steps in plots
+    :returns : (inlet, outlet)
     '''
     # Extract edges to cap
     edges = wall.extract_feature_edges(boundary_edges=True, non_manifold_edges=False, manifold_edges=False, feature_edges=False)
@@ -25,7 +20,14 @@ def cap(wall, plot=False):
     # Split edges into separate data
     edges = edges.connectivity('all')
     edges = edges.split_bodies()
-    
+    points0 = edges[0].points
+    cells0 = np.hstack((np.array([len(points0)]),np.arange(len(points0))))
+    points1 = edges[1].points
+    print('edges', edges[0].cells)
+    cells1 = np.hstack((np.array([len(points1)]),np.arange(len(points1))))
+    print(cells0)
+    #inlet = pv.PolyData(points0, cells0)
+    #outlet = pv.PolyData(points1, cells1)
     inlet = edges[0].delaunay_2d()
     outlet = edges[1].delaunay_2d()
     if plot==True:
@@ -35,6 +37,5 @@ def cap(wall, plot=False):
         plt.add_legend()
         plt.show()
     return(inlet, outlet)
-
-cap(wall_cut, plot=True)
     
+#cap(wall, plot=True)
