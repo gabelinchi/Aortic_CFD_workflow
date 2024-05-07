@@ -9,12 +9,21 @@ import tetgen as tet
 import remesh
 import meshclosing
 import utils as ut
+import cutting
 
 #paths to the aorta geometry
 
 inlet_path = "geometries\input\inlet.stl"
 wall_path = "geometries\input\wall.stl"
 outlet_path = "geometries\input\outlet.stl"
+
+#Filename of cutted wall
+fn_wall_cut = "wall_cut.mesh"
+
+#Reading the files with pyvista
+inlet = pv.read(inlet_path)
+wall = pv.read(wall_path)
+outlet = pv.read(outlet_path)
 
 #Meshing parameters
 adjustment = np.array([0,0,20])
@@ -29,9 +38,12 @@ tetgen_parameters = dict(
     mindihedral=20, 
     minratio=1.5)
 
+#Cut the wall geometry after the aortic root
+wall_cut = cutting.main_cutter(inlet, wall, plot=True)
+pv.save_meshio(fn_wall_cut, wall_cut)
 
-#Run remesh
-inlet_remeshed, wall_remeshed, outlet_remeshed = remesh.remesh(inlet_path, wall_path, outlet_path, mmg_parameters)
+#Run remesh (takes the file Path !!! as input)
+inlet_remeshed, wall_remeshed, outlet_remeshed = remesh.remesh(inlet_path, fn_wall_cut, outlet_path, mmg_parameters, plot=True)
 
 #Close remeshed meshes
 
