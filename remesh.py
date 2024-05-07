@@ -8,22 +8,23 @@ import tetgen as tet
 import meshio
 import subprocess as sub
 
-def remesh(inlet_path, wall_path, output_path, parameters):
+def remesh(inlet_path, wall_path, output_path, parameters, plot=False):
     # Convert input file from stl to .mesh
     meshio.write('inlet.mesh', meshio.read(inlet_path))
     meshio.write('wall.mesh', meshio.read(wall_path))
     meshio.write('outlet.mesh', meshio.read(output_path))
 
-    #import .stl's to pyvista
-    pv_inlet_mesh = pv.read(inlet_path)
-    pv_wall_mesh = pv.read(wall_path)
-    pv_outlet_mesh = pv.read(output_path)
-
     print('Succesfully imported geometry')
 
-    pv_inlet_mesh.plot(show_edges = True)
-    pv_wall_mesh.plot(show_edges = True)
-    pv_outlet_mesh.plot(show_edges = True)
+    if plot:
+        #import .stl's to pyvista
+        pv_inlet_mesh = pv.read(inlet_path)
+        pv_wall_mesh = pv.read(wall_path)
+        pv_outlet_mesh = pv.read(output_path)
+
+        pv_inlet_mesh.plot(show_edges = True)
+        pv_wall_mesh.plot(show_edges = True)
+        pv_outlet_mesh.plot(show_edges = True)
 
     """ # Extract boundaries
     inlet_edge = pv_inlet_mesh.extract_feature_edges(manifold_edges=False, non_manifold_edges=False, feature_edges = False, boundary_edges=True)
@@ -60,8 +61,9 @@ def remesh(inlet_path, wall_path, output_path, parameters):
 
     print('Succesfully remeshed geometry')
 
-    combined = inlet_remeshed + wall_remeshed + outlet_remeshed
-    combined.plot(show_edges = True)
+    if plot:
+        combined = inlet_remeshed + wall_remeshed + outlet_remeshed
+        combined.plot(show_edges = True)
 
     """ # Merge and plot with pv
     wall_and_inlet = wall_remeshed.merge(inlet_remeshed).clean(tolerance=0.001) #combines two meshes and removes duplicate points

@@ -122,6 +122,3 @@ def areaselection(areas):
     smallest_index_calc = np.where(smallest_area == areas)
     smallest_area_index = smallest_index_calc[0]
     return smallest_area, smallest_area_index
-
-
-

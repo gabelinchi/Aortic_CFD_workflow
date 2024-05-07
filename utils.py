@@ -9,7 +9,6 @@ from scipy import interpolate
 from scipy.interpolate import RBFInterpolator, NearestNDInterpolator
 from scipy.spatial import distance
 import pyvista as pv
-import vtk
 
 
 def rotation_matrix_from_vectors(vec1, vec2):

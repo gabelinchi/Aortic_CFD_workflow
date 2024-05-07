@@ -9,12 +9,22 @@ import tetgen as tet
 import remesh
 import meshclosing
 import utils as ut
+import cutting
+import volume_mesh
 
 #paths to the aorta geometry
 
 inlet_path = "geometries\input\inlet.stl"
 wall_path = "geometries\input\wall.stl"
 outlet_path = "geometries\input\outlet.stl"
+
+#Filename of cutted wall
+fn_wall_cut = "wall_cut.mesh"
+
+#Reading the files with pyvista
+inlet = pv.read(inlet_path)
+wall = pv.read(wall_path)
+outlet = pv.read(outlet_path)
 
 #Meshing parameters
 adjustment = np.array([0,0,20])
@@ -29,9 +39,12 @@ tetgen_parameters = dict(
     mindihedral=20, 
     minratio=1.5)
 
+#Cut the wall geometry after the aortic root
+wall_cut = cutting.main_cutter(inlet, wall, plot=True)
+pv.save_meshio(fn_wall_cut, wall_cut)
 
-#Run remesh
-inlet_remeshed, wall_remeshed, outlet_remeshed = remesh.remesh(inlet_path, wall_path, outlet_path, mmg_parameters)
+#Run remesh (takes the file Path !!! as input)
+inlet_remeshed, wall_remeshed, outlet_remeshed = remesh.remesh(inlet_path, fn_wall_cut, outlet_path, mmg_parameters, plot=True)
 
 #Close remeshed meshes
 
@@ -48,31 +61,10 @@ inlet_reduced = meshclosing.remove_points_and_fill(inlet_remeshed, inlet_point_s
 combined_mesh = (wall_reduced + outlet_reduced+inlet_reduced).clean(tolerance=search_tolerance)
 combined_mesh.plot(show_edges=True)
 
-# create 3D tetmesh from surface mesh
-tetmesh = tet.TetGen(combined_mesh)
-tetmesh.tetrahedralize(**tetgen_parameters)
-grid = tetmesh.grid
-grid.plot(show_edges=True)
+#Make a 3D mesh from the combined mesh
+tetmesh = volume_mesh.volume_meshing(combined_mesh, tetgen_parameters, False)
 
-# Save the generated mesh as a .stl
-grid.save('aorta_tetmesh.vtk', binary=False)
-
-# get cell centroids
-cells = grid.cells.reshape(-1, 5)[:, 1:]
-cell_center = grid.points[cells].mean(1)
-
-# extract cells below the 0 xy plane
-mask = cell_center[:, 2] < 0
-cell_ind = mask.nonzero()[0]
-subgrid = grid.extract_cells(cell_ind)
-
-# advanced plotting
-plotter = pv.Plotter()
-plotter.add_mesh(subgrid, 'lightgrey', lighting=True, show_edges=True)
-plotter.add_mesh(combined_mesh, 'r', 'wireframe')
-plotter.add_legend([[' Input Mesh ', 'r'],
-                    [' Tessellated Mesh ', 'black']])
-plotter.show()
+tetmesh.plot(show_edges = True)
 
 #print(mesh)
 
