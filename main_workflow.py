@@ -48,13 +48,14 @@ pv.save_meshio(fn_wall_cut, wall_cut)
 
 #Create caps
 inlet_cap, outlet_cap = cap(wall_cut, plot=True)
+pv.save_meshio('inlet_cap.mesh', inlet_cap)
+pv.save_meshio('outlet_cap.mesh', outlet_cap)
 
 #Combine parts
 combined = (wall_cut+inlet_cap+outlet_cap).clean()
 plt = pv.Plotter()
 plt.add_mesh(combined, style='wireframe')
 edgetest = combined.extract_feature_edges(boundary_edges=True, non_manifold_edges=True, manifold_edges=False, feature_edges=False)
-plt.add_mesh(edgetest, color='red')
 plt.show()
 pv.save_meshio('combined_mesh.mesh', combined)
 
@@ -64,6 +65,7 @@ pv.save_meshio('combined_mesh.mesh', combined)
 combined_remeshed = remesh.remesh_edge_detect('combined_mesh.mesh', 'combined_mmg.mesh', mmg_parameters, plot=True) #HARDCODED FILENAMES!!
 
 #Make a 3D mesh from the combined mesh
+combined_remeshed = combined_remeshed.extract_surface().triangulate()
 tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, False)
 
 tetmesh.plot(show_edges = True)
