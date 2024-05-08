@@ -63,12 +63,56 @@ pv.save_meshio('combined_mesh.mesh', combined)
 
 #Run remesh (takes the file Path !!! as input)
 combined_remeshed = remesh.remesh_edge_detect('combined_mesh.mesh', 'combined_mmg.mesh', mmg_parameters, plot=True) #HARDCODED FILENAMES!!
+combined_remeshed = combined_remeshed.extract_surface().triangulate()
+
 
 #Make a 3D mesh from the combined mesh
-combined_remeshed = combined_remeshed.extract_surface().triangulate()
 tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, False)
 
 tetmesh.plot(show_edges = True)
+
+def remove_far_points(selection, center):
+    print(selection)
+    distances = np.array([])
+    for i in range(len(selection)):
+        distance = np.linalg.norm(selection[i] - center)
+        distances = np.append(distances, distance)
+    
+    avg_distance = np.average(distances)
+    new_selection = np.empty((0,3))
+
+    for i in range(len(distances)):
+        if distances[i] < 4 * avg_distance:
+            new_selection = np.vstack([new_selection, selection[:, i]])
+        
+
+    return new_selection
+
+#Identificate inlet/outlet
+def identification(wall, extraction_surface):
+    wall_surface = wall.extract_surface()
+    wall_edge = wall_surface.extract_feature_edges(45)
+    wall_points = wall_surface.points
+    first_selection = np.empty((0,3))
+    center = extraction_surface.points.mean(0)
+    normal = extraction_surface.compute_normals()['Normals'].mean(0)
+
+    for i in range(len(wall_points)):
+        if -0.01 < np.dot(np.subtract(wall_points[i], center), normal) < 0.01:
+            first_selection = np.vstack([first_selection, wall_points[i]])
+
+    second_selection = remove_far_points(first_selection, center)
+    second_selection = pv.PolyData(second_selection)
+    second_selection = second_selection.delaunay_2d()
+
+    return second_selection, wall_edge
+
+inlet_selected, edge = identification(tetmesh, inlet_cap)
+plt = pv.Plotter()
+plt.add_mesh(inlet_selected, show_edges = True, color = 'red')
+plt.add_mesh(edge, color = 'blue')
+plt.show()
+
 
 #print(mesh)
 
