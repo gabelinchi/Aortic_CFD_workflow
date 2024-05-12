@@ -2,13 +2,16 @@ import sys
 import os
 from os.path import join
 import numpy as np
-from itertools import groupby
-from collections import Counter
-import re
 from scipy import interpolate
 from scipy.interpolate import RBFInterpolator, NearestNDInterpolator
 from scipy.spatial import distance
 import pyvista as pv
+
+
+#Creates a readible format for the faces of a mesh
+def pad(faces):
+        num_rows = faces.shape[0]
+        return(np.hstack((np.full((num_rows, 1), 3),faces)))
 
 
 def rotation_matrix_from_vectors(vec1, vec2):
@@ -110,3 +113,15 @@ def average_normal(vector, size, index):
     average_normal = normalise(normal_sum)
     average_normal_flat = average_normal.flatten()
     return average_normal_flat
+
+
+#Creates a spiderweb-like closed surface mesh from a contour/edge
+def make_spiderweb(perimeter):
+        points = perimeter.points
+        cells = perimeter.cells
+        cells = cells.reshape(-1, 3)[:,[1,2]]
+        centerpoint = points.mean(0)
+        points = np.vstack((points, centerpoint))
+        cells = np.hstack((cells, np.full((len(cells), 1), len(points)-1)))
+        cells = pad(cells)
+        return pv.PolyData(points, cells)

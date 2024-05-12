@@ -13,8 +13,11 @@ import volume_mesh
 from capping import cap
 import identification as id
 
-#paths to the aorta geometry
+#----------------------------------------------------------------------------------------------------------------------------
+# Setup
+#----------------------------------------------------------------------------------------------------------------------------
 
+#paths to the aorta geometry
 inlet_path = "geometries\input\inlet.stl"
 wall_path = "geometries\input\wall.stl"
 outlet_path = "geometries\input\outlet.stl"
@@ -36,10 +39,14 @@ tetgen_parameters = dict(
     minratio=1.5)
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = True
+show_plot = False
 
 
 print('Setup and import done')
+
+#--------------------------------------------------------------------------------------------------------------------------
+# 3D-meshing algorithm
+#--------------------------------------------------------------------------------------------------------------------------
 
 #Cut the wall geometry after the aortic root
 wall_cut = cutting.main_cutter(inlet, wall, plot=show_plot)
@@ -50,9 +57,11 @@ inlet_cap, outlet_cap = cap(wall_cut, plot=show_plot)
 pv.save_meshio('inlet_cap.mesh', inlet_cap)
 pv.save_meshio('outlet_cap.mesh', outlet_cap)
 
-#Combine parts
-combined = (wall_cut+inlet_cap+outlet_cap).clean()
+#Combine cutted wall and inlet/outlet caps
+combined = (wall_cut + inlet_cap + outlet_cap).clean()
+print('Meshes succesfully combined')
 
+#Plot result of mesh combining. When edgetest gives an error, the structure has dublicate faces/nodes
 if show_plot:
     plt = pv.Plotter()
     plt.add_mesh(combined, style='wireframe')
@@ -63,16 +72,22 @@ pv.save_meshio('combined_mesh.mesh', combined)
 
 
 
-#Run remesh (takes the file Path !!! as input)
-combined_remeshed = remesh.remesh_edge_detect('combined_mesh.mesh', 'combined_mmg.mesh', mmg_parameters, plot=show_plot) #HARDCODED FILENAMES!!
+#Run remesh (takes predetermined internally defined file path as input, DON'T CHANGE)
+combined_remeshed = remesh.remesh_edge_detect('combined_mesh.mesh', 'combined_mmg.mesh', mmg_parameters, plot=show_plot)
+#triangulation step to make sure Tetgen only gets triangels as input
 combined_remeshed = combined_remeshed.extract_surface().triangulate()
 
 
 #Make a 3D mesh from the combined mesh
-tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, False)
+tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, plot=show_plot)
 
-tetmesh.plot(show_edges = True)
+#Plot 3D_mesh
+if show_plot:
+    tetmesh.plot(show_edges = True)
 
+#----------------------------------------------------------------------------------------------------------------------------
+# Identification and mapping
+#----------------------------------------------------------------------------------------------------------------------------
 inlet_selected = id.selection(tetmesh, inlet_cap)
 outlet_selected = id.selection(tetmesh, outlet_cap)
 plt = pv.Plotter()
