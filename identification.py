@@ -31,6 +31,7 @@ def remove_far_points(selection, center):
 #Identificate inlet/outlet
 def selection(wall, extraction_surface):
 
+    print('Start inlet/outlet identification')
     #Extract the nodes on the surface of the 3D_mesh
     wall_surface = wall.extract_surface()
     wall_points = wall_surface.points
@@ -53,6 +54,8 @@ def selection(wall, extraction_surface):
     #Create a closed surface mesh from the selected points
     second_selection = pv.PolyData(second_selection)
     second_selection = second_selection.delaunay_2d()
+
+    print('Identification succesfull')
 
     return second_selection
 
