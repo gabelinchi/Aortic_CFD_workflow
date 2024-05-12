@@ -56,6 +56,8 @@ def remesh_edge_detect(in_path, out_path, parameters, plot=False):
     :plot : bool, show intermediate plots
     :returns : PyvistaPolydata of the remeshed geo
     '''
+    print('Start 2D remeshing')
+
     density = parameters['mesh_density']
     sizing = parameters['sizing']
     angle = parameters['detection angle']
