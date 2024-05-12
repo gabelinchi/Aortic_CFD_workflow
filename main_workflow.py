@@ -88,13 +88,16 @@ if show_plot:
 #----------------------------------------------------------------------------------------------------------------------------
 # Identification and mapping
 #----------------------------------------------------------------------------------------------------------------------------
+
+#From the 3D mesh, select the nodes that belong to the inlet and outlet
 inlet_selected = id.selection(tetmesh, inlet_cap)
 outlet_selected = id.selection(tetmesh, outlet_cap)
-plt = pv.Plotter()
-plt.add_mesh(inlet_selected, show_edges = True, color = 'red')
-plt.add_mesh(outlet_selected, show_edges = True, color = 'blue')
-plt.show()
 
+#Plot inlet/outlet of the 3D mesh
+if show_plot:
+    plt = pv.Plotter()
+    plt.add_mesh(inlet_selected, show_edges = True, color = 'red')
+    plt.add_mesh(outlet_selected, show_edges = True, color = 'blue')
+    plt.show()
 
-#print(mesh)
 
