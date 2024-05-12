@@ -1,6 +1,7 @@
 
 #import modules
 import sys
+import os
 import os.path as osp
 from glob import glob
 import numpy as np
@@ -50,12 +51,12 @@ print('Setup and import done')
 
 #Cut the wall geometry after the aortic root
 wall_cut = cutting.main_cutter(inlet, wall, plot=show_plot)
-pv.save_meshio("wall_cut.mesh", wall_cut)
+pv.save_meshio("temp\wall_cut.mesh", wall_cut)
 
 #Create caps
 inlet_cap, outlet_cap = cap(wall_cut, plot=show_plot)
-pv.save_meshio('inlet_cap.mesh', inlet_cap)
-pv.save_meshio('outlet_cap.mesh', outlet_cap)
+pv.save_meshio('temp\inlet_cap.mesh', inlet_cap)
+pv.save_meshio('temp\outlet_cap.mesh', outlet_cap)
 
 #Combine cutted wall and inlet/outlet caps
 combined = (wall_cut + inlet_cap + outlet_cap).clean()
@@ -68,12 +69,12 @@ if show_plot:
     edgetest = combined.extract_feature_edges(boundary_edges=True, non_manifold_edges=True, manifold_edges=False, feature_edges=False)
     plt.show()
 
-pv.save_meshio('combined_mesh.mesh', combined)
+pv.save_meshio('temp\combined_mesh.mesh', combined)
 
 
 
 #Run remesh (takes predetermined internally defined file path as input, DON'T CHANGE)
-combined_remeshed = remesh.remesh_edge_detect('combined_mesh.mesh', 'combined_mmg.mesh', mmg_parameters, plot=show_plot)
+combined_remeshed = remesh.remesh_edge_detect('temp\combined_mesh.mesh', 'temp\combined_mmg.mesh', mmg_parameters, plot=show_plot)
 #triangulation step to make sure Tetgen only gets triangels as input
 combined_remeshed = combined_remeshed.extract_surface().triangulate()
 
@@ -100,4 +101,10 @@ if show_plot:
     plt.add_mesh(outlet_selected, show_edges = True, color = 'blue')
     plt.show()
 
+#Deletes all the temporary files in the temp folder (have to fix)
+""" temp_files = glob('temp')
+for f in temp_files:
+    os.remove(f) """
+
+print('Done!')
 

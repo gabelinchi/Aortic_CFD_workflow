@@ -23,7 +23,7 @@ def volume_meshing(combined_mesh, tetgen_parameters, plot=False):
         grid.plot(show_edges=True)
 
         # Save the generated mesh as a .stl
-        grid.save('aorta_tetmesh.vtk', binary=False)
+        grid.save('temp\aorta_tetmesh.vtk', binary=False)
 
         # get cell centroids
         cells = grid.cells.reshape(-1, 5)[:, 1:]
