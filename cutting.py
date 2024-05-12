@@ -7,6 +7,7 @@ import cutting_with_vector as cwv
 #main function that runs the cutter script
 def main_cutter(inlet, wall, plot=False):
 
+    print('Start cutting')
     #Calculates areas along the centerline of the aorta (only first 40 mm). Also outputs nodes/normals and edge profiles for the final cut and visualisation
     centernodes, centernormals, edgeprofiles, slice_areas = centerline(inlet, wall)
 
@@ -21,6 +22,7 @@ def main_cutter(inlet, wall, plot=False):
     #Calculates the smallest area across the first 40mm of the inlet
     smallest_area, smallest_area_index = areaselection(slice_areas)
 
+    print('Smallest cross-section calculated')
     print('Smallest cross-section: ',smallest_area)
 
     #Calculates the normal in the final cutting plane centerpoint
@@ -28,9 +30,9 @@ def main_cutter(inlet, wall, plot=False):
     #Final centernode
     center_final = centernodes[smallest_area_index].flatten()
 
-    print(normal_final)
-    print(center_final)
-    new_geometry = cwv.cut(center_final, normal_final, wall, plot=True)    
+    new_geometry = cwv.cut(center_final, normal_final, wall, plot=plot)
+
+    print('Cutting done')    
     return new_geometry
 
 def centerline(inlet, wall):
@@ -102,6 +104,8 @@ def centerline(inlet, wall):
         normal = new_normal
 
         count += 1
+
+    print('Centerline generated')
     
     return centernodes, centernormals, edgeprofiles, slice_areas
 
@@ -116,9 +120,11 @@ def areaselection(areas):
     #Select the segments that have a narrow part and are larger than 1. This result in multiple arrays that go from a smaller to a larger area
     narrow_segments = [segment for segment in area_segments if len(segment) > 1 and segment[0] < segment[-1]]
 
-    #Select the smallest area from the last small segment (might want to find a smarter solution for this, but for now this works)
+    #Select the smallest area from the second small segment. This should be the constriction after the aortic root (might want to find a smarter solution for this, but for now this works)
     smallest_area = min(narrow_segments[1]) #Gives out of bound error when there is no constriction
 
+    #Grab the index of the smallest_area
     smallest_index_calc = np.where(smallest_area == areas)
     smallest_area_index = smallest_index_calc[0]
+
     return smallest_area, smallest_area_index

@@ -19,20 +19,12 @@ inlet_path = "geometries\input\inlet.stl"
 wall_path = "geometries\input\wall.stl"
 outlet_path = "geometries\input\outlet.stl"
 
-#Filename of cutted wall, inlet and outlet
-fn_wall_cut = "wall_cut.mesh"
-fn_inlet = "inlet.mesh"
-fn_outlet = "outlet.mesh"
-
 #Reading the files with pyvista
 inlet = pv.read(inlet_path)
 wall = pv.read(wall_path)
 outlet = pv.read(outlet_path)
 
 #Meshing parameters
-adjustment = np.array([0,0,20])
-search_tolerance = 0.1 #Need to check this value and what it means. 0.1 works with the expected output nodes
-
 mmg_parameters = {
     'mesh_density': '0.1',
     'sizing': '1',
@@ -43,27 +35,36 @@ tetgen_parameters = dict(
     mindihedral=20, 
     minratio=1.5)
 
+#Plotting boolean, when True: code generates intermediate plots of workflow
+show_plot = True
+
+
+print('Setup and import done')
+
 #Cut the wall geometry after the aortic root
-wall_cut = cutting.main_cutter(inlet, wall, plot=True)
-pv.save_meshio(fn_wall_cut, wall_cut)
+wall_cut = cutting.main_cutter(inlet, wall, plot=show_plot)
+pv.save_meshio("wall_cut.mesh", wall_cut)
 
 #Create caps
-inlet_cap, outlet_cap = cap(wall_cut, plot=True)
+inlet_cap, outlet_cap = cap(wall_cut, plot=show_plot)
 pv.save_meshio('inlet_cap.mesh', inlet_cap)
 pv.save_meshio('outlet_cap.mesh', outlet_cap)
 
 #Combine parts
 combined = (wall_cut+inlet_cap+outlet_cap).clean()
-plt = pv.Plotter()
-plt.add_mesh(combined, style='wireframe')
-edgetest = combined.extract_feature_edges(boundary_edges=True, non_manifold_edges=True, manifold_edges=False, feature_edges=False)
-plt.show()
+
+if show_plot:
+    plt = pv.Plotter()
+    plt.add_mesh(combined, style='wireframe')
+    edgetest = combined.extract_feature_edges(boundary_edges=True, non_manifold_edges=True, manifold_edges=False, feature_edges=False)
+    plt.show()
+
 pv.save_meshio('combined_mesh.mesh', combined)
 
 
 
 #Run remesh (takes the file Path !!! as input)
-combined_remeshed = remesh.remesh_edge_detect('combined_mesh.mesh', 'combined_mmg.mesh', mmg_parameters, plot=True) #HARDCODED FILENAMES!!
+combined_remeshed = remesh.remesh_edge_detect('combined_mesh.mesh', 'combined_mmg.mesh', mmg_parameters, plot=show_plot) #HARDCODED FILENAMES!!
 combined_remeshed = combined_remeshed.extract_surface().triangulate()
 
 
@@ -82,5 +83,3 @@ plt.show()
 
 #print(mesh)
 
-#use an excessive amount of comments on everything.
-#extra line of code changed
