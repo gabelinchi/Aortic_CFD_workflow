@@ -22,9 +22,6 @@ def volume_meshing(combined_mesh, tetgen_parameters, plot=False):
     if plot:
         grid.plot(show_edges=True)
 
-        # Save the generated mesh as a .stl
-        grid.save('temp\aorta_tetmesh.vtk', binary=False)
-
         # get cell centroids
         cells = grid.cells.reshape(-1, 5)[:, 1:]
         cell_center = grid.points[cells].mean(1)
