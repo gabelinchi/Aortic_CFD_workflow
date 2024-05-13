@@ -82,6 +82,9 @@ combined_remeshed = combined_remeshed.extract_surface().triangulate()
 #Make a 3D mesh from the combined mesh
 tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, plot=show_plot)
 
+#Save 3D mesh
+tetmesh.save('3D_output_mesh.vtk')
+
 #Plot 3D_mesh
 if show_plot:
     tetmesh.plot(show_edges = True)
