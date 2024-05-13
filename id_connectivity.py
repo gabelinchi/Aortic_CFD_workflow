@@ -9,14 +9,13 @@ def boolplot (surf, boolarray, text=''):
     plt.show()
     return
 
-def id_con (surf, plot=False):
+def id_con (surf, seeds=None, plot=False):
 
     # Tag edgenodes
     edgenodes = surf.edge_mask(30)
 
     # Extract np arrays
     faces = surf.faces.reshape(-1, 4)[:,[1,2,3]]
-    nodes = surf.points
 
     # Create array of edge faces
     edgenode_indices = np.where(edgenodes)[0] # Converts bool array to array of indices
@@ -43,11 +42,13 @@ def id_con (surf, plot=False):
 
         # Pick a nonlisted face
         front = np.argmax(~np.any(surfaces, axis=1)) # Front contains indices, not bools
+        if len(seeds) != 0 and len(seeds) >= num_surfaces:
+            front = surf.find_closest_cell(seeds[num_surfaces-1, :])
 
         # Add face to surface
         surfaces[front, num_surfaces] = True
 
-        boolplot(surf, surfaces[:, num_surfaces], text = 'Seed')
+        #boolplot(surf, surfaces[:, num_surfaces], text = 'Seed')
 
         counter = 0
         while counter < 10000:
@@ -57,8 +58,7 @@ def id_con (surf, plot=False):
 
             #boolplot(surf, neighbours, text = 'All neighbours')
 
-            neighbours[front] = False # Removes front faces
-            neighbours[np.any(surfaces[:, 1:], axis=1)] = False # Removes faces part of a surface
+            neighbours[front | np.any(surfaces[:, 1:], axis=1)] = False # Removes front faces and faces part of a surface
 
             #boolplot(surf, neighbours, text = 'Cleaned neighbours')
 
@@ -69,7 +69,7 @@ def id_con (surf, plot=False):
 
             # Check if the front is empty
             if np.any(front) == False:
-                boolplot(surf, surfaces[:, num_surfaces], text = 'Surface')
+                #boolplot(surf, surfaces[:, num_surfaces], text = 'Surface')
                 break
             counter += 1
         num_surfaces += 1
@@ -79,9 +79,34 @@ def id_con (surf, plot=False):
 #Load input files
 
 tetmesh = pv.read('3D_output_mesh.vtk')
+
+#paths to the aorta geometry
+inlet_path = "geometries\input\inlet.stl"
+wall_path = "geometries\input\wall.stl"
+outlet_path = "geometries\input\outlet.stl"
+
+#Reading the files with pyvista
+inlet = pv.read(inlet_path)
+wall = pv.read(wall_path)
+outlet = pv.read(outlet_path)
+
+seeds = np.array([inlet.points.mean(0), outlet.points.mean(0)])
+print(seeds)
+
 surf = tetmesh.extract_surface()
 
-surfaces = id_con(surf)
+surfaces = id_con(surf, seeds=seeds)
 
-boolplot(surf, surfaces[:, 0])
-boolplot(surf, surfaces[:, 1])
+inlet = surf.extract_cells(surfaces[:, 1])
+outlet = surf.extract_cells(surfaces[:, 2])
+wall = surf.extract_cells(surfaces[:, 3])
+
+
+inlet_faces = inlet.cells.reshape(-1, 4)[:,[1,2,3]]
+print(inlet['point_ind'])
+
+with np.nditer(inlet_faces, op_flags=['readwrite']) as it:
+        for x in it:
+            x[...]= inlet['point_ind'][inlet_faces[...]]
+
+print(inlet_faces)
