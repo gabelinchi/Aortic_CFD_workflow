@@ -55,6 +55,9 @@ tetgen_parameters = dict(
     mindihedral=20, 
     minratio=1.5)
 
+#Angle for identification
+id_angle = 30
+
 #Plotting boolean, when True: code generates intermediate plots of workflow
 show_plot = True
 
@@ -107,19 +110,38 @@ if show_plot:
     tetmesh.plot(show_edges = True)
 
 #----------------------------------------------------------------------------------------------------------------------------
-# Identification and mapping
+# Identification
 #----------------------------------------------------------------------------------------------------------------------------
 
-#From the 3D mesh, select the nodes that belong to the inlet and outlet
-inlet_selected = id.selection(tetmesh, inlet_cap)
-outlet_selected = id.selection(tetmesh, outlet_cap)
+#Create the seeds for the surface identification based on the center points. INLET FIRST!, OUTLET SECOND!
+seeds = np.array([inlet.points.mean(0),outlet.points.mean(0)])
 
-#Plot inlet/outlet of the 3D mesh
+#Detect the surfaces of the 3D mesh whilst keeping the original ID's, if there is a seed delivered
+if len(seeds) > 0:
+    surface_identification = id.identify_surfaces(tetmesh, id_angle, seeds, show_plot)
+
+#Seperate the indentified surfaces in inlet/outlet/wall
+id_inlet = surface_identification[0]
+id_outlet = surface_identification[1]
+id_wall = surface_identification[2]
+
+#Plot the identifies surfaces for general overview
 if show_plot:
     plt = pv.Plotter()
-    plt.add_mesh(inlet_selected, show_edges = True, color = 'red')
-    plt.add_mesh(outlet_selected, show_edges = True, color = 'blue')
+    plt.add_mesh(id_inlet, show_edges = True, color = 'red')
+    plt.add_mesh(id_outlet, show_edges = True, color = 'blue')
+    plt.add_mesh(id_wall, show_edges = True, color = 'green')
     plt.show()
+
+#----------------------------------------------------------------------------------------------------------------------------
+# Mapping
+#----------------------------------------------------------------------------------------------------------------------------
+
+
+#----------------------------------------------------------------------------------------------------------------------------
+# FEBio
+#----------------------------------------------------------------------------------------------------------------------------
+
 
 #Deletes all the temporary files in the temp folder (have to fix)
 """ temp_files = glob(temp_dir)
