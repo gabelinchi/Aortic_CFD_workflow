@@ -1,18 +1,40 @@
 import numpy as np
 import pyvista as pv
 
-def boolplot (surf, boolarray, text=''):
-    plt = pv.Plotter()
-    plt.add_text(text)
-    plt.add_mesh(surf, style='wireframe', color='black')
-    plt.add_mesh(surf.extract_cells(boolarray), color = 'red')
-    plt.show()
-    return
 
-def id_con (surf, seeds=None, plot=False):
+
+def id_con (mesh, angle, seeds=[], plot=False, include_original_connectivity=False):
+    '''
+    This function identifies surfaces of a pyvista 3D or surface mesh using the pv.edge_mask filter to determine
+    edges. It returns a pv MultiBlock containing the surfaces as separate blocks. Also included as point and cell
+    data embedded in the MultiBlock are the original point indices (point_data['orig_point_indices']) and the faces of the identified surfaces
+    defined by the original point indices (cell_data['original_connectivity']).
+
+    :mesh   : pyvista PolyData or Multiblock, mesh to be split up
+    :angle  : int, sharp edge detection angle
+    :seeds  : 2D numpy array containing xyz coords, can be used to order the surfaces if points near the surfaces
+              are known. If empty, seeds are automatically generated 
+              !WARNING! known bug: if closest point to seed is on an edge, function misbehaves
+    :plot   : bool, show intermediate plots
+    :include_original_connectivity: bool, mapping operation is quite slow, only use if necessary
+    :returns: pv.MultiBlock containging identified surfaces
+    '''
+
+    # Plotter tool for better visualisation
+    def boolplot (surf, boolarray, text=''):
+        plt = pv.Plotter()
+        plt.add_text(text)
+        plt.add_mesh(surf, style='wireframe', color='black')
+        plt.add_mesh(surf.extract_cells(boolarray), color = 'red')
+        plt.show()
+        return
+
+    # Add original point data and extract surface
+    mesh['orig_point_indices'] = np.arange(mesh.n_points, dtype=np.int32)
+    surf = mesh.extract_surface()
 
     # Tag edgenodes
-    edgenodes = surf.edge_mask(30)
+    edgenodes = surf.edge_mask(angle)
 
     # Extract np arrays
     faces = surf.faces.reshape(-1, 4)[:,[1,2,3]]
@@ -21,8 +43,14 @@ def id_con (surf, seeds=None, plot=False):
     edgenode_indices = np.where(edgenodes)[0] # Converts bool array to array of indices
     edgefaces = np.any(np.isin(faces, edgenode_indices), axis=1) # Creates bool array of rows containing edgepoints
 
+    if plot==True:
+        boolplot(surf, edgefaces, text='edges')
+
     # Create surfaces array, first column is edges:
     surfaces = edgefaces.reshape(-1,1)
+
+    # Create PyVista PolyData block
+    surf_block = pv.MultiBlock()
 
     # Start of identification loop
     num_surfaces = 1
@@ -42,13 +70,14 @@ def id_con (surf, seeds=None, plot=False):
 
         # Pick a nonlisted face
         front = np.argmax(~np.any(surfaces, axis=1)) # Front contains indices, not bools
-        if len(seeds) != 0 and len(seeds) >= num_surfaces:
+        if len(seeds) >= num_surfaces:
             front = surf.find_closest_cell(seeds[num_surfaces-1, :])
 
         # Add face to surface
         surfaces[front, num_surfaces] = True
 
-        #boolplot(surf, surfaces[:, num_surfaces], text = 'Seed')
+        if plot==True:
+            boolplot(surf, surfaces[:, num_surfaces], text = 'Seed')
 
         counter = 0
         while counter < 10000:
@@ -69,11 +98,26 @@ def id_con (surf, seeds=None, plot=False):
 
             # Check if the front is empty
             if np.any(front) == False:
-                #boolplot(surf, surfaces[:, num_surfaces], text = 'Surface')
                 break
             counter += 1
+
+        if plot==True:
+            boolplot(surf, surfaces[:, num_surfaces], text = f'Identified surface no. {num_surfaces}')
+
+        # Create new surface as Polydata
+        new_surf = surf.extract_cells(surfaces[:, num_surfaces])
+
+        # Get original node data and add as cell data (slow operation, skip if not necessary)
+        if include_original_connectivity == True:
+            new_surf_faces = new_surf.cells.reshape(-1, 4)[:,[1,2,3]]
+            map = np.vectorize(lambda x: new_surf['orig_point_indices'][x])
+            new_surf.cell_data['original_connectivity'] = map(new_surf_faces)
+
+        # Add new surface to the block
+        surf_block.append(new_surf)
+
         num_surfaces += 1
-    return surfaces
+    return surf_block
 
 #-- for debugging & writing --#
 #Load input files
@@ -91,22 +135,27 @@ wall = pv.read(wall_path)
 outlet = pv.read(outlet_path)
 
 seeds = np.array([inlet.points.mean(0), outlet.points.mean(0)])
-print(seeds)
 
-surf = tetmesh.extract_surface()
+surfaces = id_con(tetmesh, 30, seeds=seeds, include_original_connectivity=True)
 
-surfaces = id_con(surf, seeds=seeds)
-
-inlet = surf.extract_cells(surfaces[:, 1])
-outlet = surf.extract_cells(surfaces[:, 2])
-wall = surf.extract_cells(surfaces[:, 3])
+tetmesh.extract_points(surfaces[0].cell_data['original_connectivity'].flatten()).plot()
+surfaces[0].plot(text='inlet')
+surfaces[1].plot(text='outlet')
+surfaces[2].plot(text='wall')
 
 
-inlet_faces = inlet.cells.reshape(-1, 4)[:,[1,2,3]]
-print(inlet['point_ind'])
+def get_old_points(surface):
+    faces = surface.cells.reshape(-1, 4)[:,[1,2,3]]
+    map = np.vectorize(lambda x: surface['orig_indices'][x])
+    return map(faces)
 
-with np.nditer(inlet_faces, op_flags=['readwrite']) as it:
-        for x in it:
-            x[...]= inlet['point_ind'][inlet_faces[...]]
+old_points = get_old_points(outlet)
 
-print(inlet_faces)
+surfpoints = surf['orig_indices']
+inletpoints = inlet['orig_indices']
+
+surf.plot()
+plt = pv.Plotter()
+plt.add_mesh(tetmesh, style = 'wireframe', color = 'black')
+plt.add_mesh(tetmesh.extract_points(old_points.flatten(), adjacent_cells=False, include_cells=True))
+plt.show()
