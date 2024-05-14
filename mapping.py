@@ -6,39 +6,38 @@ from glob import glob
 import pyvista as pv   
 import utils as ut   
 
+intp_options = {
+    'zero_boundary_dist': 0.5,  # percentage of border with zero velocity (smooth damping at the border)
+    'zero_backflow': True,      # set all backflow components to zero
+    'kernel': 'linear',         # RBF interpolation kernel (linear is recommended)
+    'smoothing': 0.5,          # interpolation smoothing, range recommended [0, 2]
+    'degree': 0,
+    'hard_noslip': False}       # degree of polynomial added to the RBF interpolation matrix
 #NOTE: .vtp files are Paraview file formats
 #NOTE: This code based on the code from 'Data-driven generation of 4D velocity profiles in the aneurysmal ascending aorta' Saitta et al.
 
-#-----------------------------------------------------------------------------------------------------------------------
-## Options
-
-saveName = 'Mapped_velocity_profile'     # filename of mapped .vtp files
-flip_normals = True                      # usually set to True, but might have to change depending on target plane orientation (how to check this?)
-leftmost_idx_on_target = 000             # index of the leftmost point in the target plane w.r.t the subject
-
-#Inputs for the interpolation
-intp_options = {
-    'zero_boundary_dist': 0.2,  # percentage of border with zero velocity (smooth damping at the border)
-    'zero_backflow': True,      # set all backflow components to zero
-    'kernel': 'linear',         # RBF interpolation kernel (linear is recommended)
-    'smoothing': 0.01,          # interpolation smoothing, range recommended [0, 2]
-    'degree': 0,
-    'hard_noslip': False}       # degree of polynomial added to the RBF interpolation matrix
-
-
 #Mapping function that stores the profiles in the output folder and returns the mappend Polydata as well as the velocities
-def mapping(source_profile_dir, target_profile_fn, outputDir):
+def vel_mapping(source_profile_dir, target_plane, outputDir, intp_options):
 
+    ## Options
+    saveName = 'Mapped_velocity_profile'     # filename of mapped .vtp files
+    flip_normals = False                      # usually set to True, but might have to change depending on target plane orientation (how to check this?)
+    vel_outputDir = osp.join(outputDir, r'Mapped_Velocity_Profiles')
+
+    print('Start velocity profile mapping')
     ## Read data
     # Reads all PolyData, extracts the points, calculates the COM based on these points and calculates the normals in the COG
     source_profiles = [pv.read(i) for i in sorted(glob(osp.join(source_profile_dir, '*.vtp')))]
-    target_plane = pv.read(target_profile_fn)
     num_frames = len(source_profiles)
     source_pts = [source_profiles[k].points for k in range(num_frames)] 
-    source_coms = [source_pts[k].mean(0) for k in range(num_frames)] 
+    source_coms = [source_pts[k].mean(0) for k in range(num_frames)]
+    target_plane = target_plane.extract_surface()
     target_pts = target_plane.points
+
+    leftmost_idx_on_target = min(range(len(target_pts[: ,0])), key = target_pts[: ,1].__getitem__)             # index of the leftmost point in the target plane w.r.t the subject
     target_com = target_pts.mean(0)
-    target_normal = target_plane.compute_normals()['Normals'].mean(0) 
+    target_normal = target_plane.compute_normals()['Normals'].mean(0)
+    print(target_com)
     normals = [source_profiles[k].compute_normals()['Normals'].mean(0) for k in range(num_frames)]
     if flip_normals: normals = [normals[k] * -1 for k in range(num_frames)] #Flips the normals if flip_normals is true
 
@@ -71,7 +70,7 @@ def mapping(source_profile_dir, target_profile_fn, outputDir):
         aligned_planes[k]['Velocity'] = vel[k]
 
     # spatial interpolation 
-    interp_planes = ut.interpolate_profiles(aligned_planes, target_pts, intp_options)
+    interp_planes = ut.interpolate_profiles(aligned_planes, target_pts, intp_options) #ERROR IS IN THIS FUNCTION!!!
 
     # recenters the velocity profiles at the target profile origin for further modifications
     for k in range(num_frames):
@@ -80,8 +79,19 @@ def mapping(source_profile_dir, target_profile_fn, outputDir):
     vel_final = [interp_planes[k]['Velocity'] for k in range(num_frames)]
 
     ## Save profiles to .vtp (may be removed from final)
-    os.makedirs(outputDir, exist_ok=True) #Makes the output directory according to the path. If this one already exists there is no error raised.
+    os.makedirs(vel_outputDir, exist_ok=True) #Makes the output directory according to the path. If this one already exists there is no error raised.
     for k in range(num_frames):
-        interp_planes[k].save(osp.join(outputDir, saveName + '_{:02d}.vtp'.format(k)))
+        interp_planes[k].save(osp.join(vel_outputDir, saveName + '_{:02d}.vtp'.format(k)))
 
-    return interp_planes, vel_final
+    print('Velocity profile mapping done')
+
+    return interp_planes, num_frames
+
+velocity_map, n_maps = vel_mapping(r'C:\Users\lmorr\Documents\TU\23-24\BEP\Velocity_profiles', pv.read('test_inlet.vtk'), r'C:\Users\lmorr\Documents\TU\23-24\BEP\Git_repository\Aortic_CFD_workflow-3', intp_options)
+
+for i in velocity_map:
+    print(i.points.mean(0))
+    if False:
+        plt = pv.Plotter()
+        plt.add_points(i)
+        plt.show()
