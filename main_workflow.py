@@ -114,7 +114,7 @@ if show_plot:
 #----------------------------------------------------------------------------------------------------------------------------
 
 #Create the seeds for the surface identification based on the center points. INLET FIRST!, OUTLET SECOND!
-seeds = np.array([inlet.points.mean(0),outlet.points.mean(0)])
+seeds = np.array([inlet_cap.points.mean(0),outlet_cap.points.mean(0)])
 
 #Detect the surfaces of the 3D mesh whilst keeping the original ID's, if there is a seed delivered
 if len(seeds) > 0:
