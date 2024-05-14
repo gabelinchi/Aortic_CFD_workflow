@@ -3,7 +3,7 @@ import pyvista as pv
 
 
 
-def id_con (mesh, angle, seeds=[], plot=False, include_original_connectivity=False):
+def identify_surfaces (mesh, angle, seeds=[], plot=False, include_original_connectivity=True):
     '''
     This function identifies surfaces of a pyvista 3D or surface mesh using the pv.edge_mask filter to determine
     edges. It returns a pv MultiBlock containing the surfaces as separate blocks. Also included as point and cell
@@ -16,7 +16,7 @@ def id_con (mesh, angle, seeds=[], plot=False, include_original_connectivity=Fal
               are known. If empty, seeds are automatically generated 
               !WARNING! known bug: if closest point to seed is on an edge, function misbehaves
     :plot   : bool, show intermediate plots
-    :include_original_connectivity: bool, mapping operation is quite slow, only use if necessary
+    :include_original_connectivity: bool
     :returns: pv.MultiBlock containging identified surfaces
     '''
 
@@ -107,10 +107,10 @@ def id_con (mesh, angle, seeds=[], plot=False, include_original_connectivity=Fal
         # Create new surface as Polydata
         new_surf = surf.extract_cells(surfaces[:, num_surfaces])
 
-        # Get original node data and add as cell data (slow operation, skip if not necessary)
+        # Get original node data and add as cell data
         if include_original_connectivity == True:
             new_surf_faces = new_surf.cells.reshape(-1, 4)[:,[1,2,3]]
-            map = np.vectorize(lambda x: new_surf['orig_point_indices'][x])
+            map = lambda x: new_surf['orig_point_indices'][x]
             new_surf.cell_data['original_connectivity'] = map(new_surf_faces)
 
         # Add new surface to the block
@@ -120,7 +120,7 @@ def id_con (mesh, angle, seeds=[], plot=False, include_original_connectivity=Fal
     return surf_block
 
 #-- for debugging & writing --#
-#Load input files
+""" #Load input files
 
 tetmesh = pv.read('3D_output_mesh.vtk')
 
@@ -136,26 +136,10 @@ outlet = pv.read(outlet_path)
 
 seeds = np.array([inlet.points.mean(0), outlet.points.mean(0)])
 
-surfaces = id_con(tetmesh, 30, seeds=seeds, include_original_connectivity=True)
+surfaces = identify_surfaces(tetmesh, 30, seeds=seeds, include_original_connectivity=True)
 
 tetmesh.extract_points(surfaces[0].cell_data['original_connectivity'].flatten()).plot()
 surfaces[0].plot(text='inlet')
 surfaces[1].plot(text='outlet')
-surfaces[2].plot(text='wall')
-
-
-def get_old_points(surface):
-    faces = surface.cells.reshape(-1, 4)[:,[1,2,3]]
-    map = np.vectorize(lambda x: surface['orig_indices'][x])
-    return map(faces)
-
-old_points = get_old_points(outlet)
-
-surfpoints = surf['orig_indices']
-inletpoints = inlet['orig_indices']
-
-surf.plot()
-plt = pv.Plotter()
-plt.add_mesh(tetmesh, style = 'wireframe', color = 'black')
-plt.add_mesh(tetmesh.extract_points(old_points.flatten(), adjacent_cells=False, include_cells=True))
-plt.show()
+surfaces[2].plot(text='wall') """
+#-------------------------------#
