@@ -21,10 +21,10 @@ from tkinter.filedialog import askdirectory
 #----------------------------------------------------------------------------------------------------------------------------
 
 
-file_dir = os.path.dirname(os.path.realpath(__file__))
+file_dir = osp.dirname(osp.realpath(__file__))
 temp_dir = osp.join(file_dir, r'temp')
 output_dir = osp.join(file_dir, r'output')
-input_dir = askdirectory(title='Select Folder') # shows dialog box and return the path  
+input_dir = askdirectory(title='Select Input Folder') # shows dialog box and return the path  
 
 os.makedirs(temp_dir, exist_ok=True)
 os.makedirs(output_dir, exist_ok=True)
