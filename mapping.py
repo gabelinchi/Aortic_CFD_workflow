@@ -6,13 +6,15 @@ from glob import glob
 import pyvista as pv   
 import utils as ut   
 
-intp_options = {
-    'zero_boundary_dist': 0.5,  # percentage of border with zero velocity (smooth damping at the border)
+""" intp_options = {
+    'zero_boundary_dist': 0.2,  # percentage of border with zero velocity (smooth damping at the border)
     'zero_backflow': True,      # set all backflow components to zero
     'kernel': 'linear',         # RBF interpolation kernel (linear is recommended)
     'smoothing': 0.5,          # interpolation smoothing, range recommended [0, 2]
     'degree': 0,
-    'hard_noslip': False}       # degree of polynomial added to the RBF interpolation matrix
+    'hard_noslip': False}       # degree of polynomial added to the RBF interpolation matrix """
+
+
 #NOTE: .vtp files are Paraview file formats
 #NOTE: This code based on the code from 'Data-driven generation of 4D velocity profiles in the aneurysmal ascending aorta' Saitta et al.
 
@@ -36,7 +38,7 @@ def vel_mapping(source_profile_dir, target_plane, outputDir, intp_options):
     leftmost_idx_on_target = min(range(len(target_pts[: ,0])), key = target_pts[: ,1].__getitem__)             # index of the leftmost point (most negative in y direction) in the target plane w.r.t the subject
     target_com = target_pts.mean(0)
     target_normal = target_plane.compute_normals()['Normals'].mean(0)
-    print(target_com)
+    print('com of inlet', target_com)
     normals = [source_profiles[k].compute_normals()['Normals'].mean(0) for k in range(num_frames)]
     if flip_normals: normals = [normals[k] * -1 for k in range(num_frames)] #Flips the normals if flip_normals is true
 
@@ -68,13 +70,16 @@ def vel_mapping(source_profile_dir, target_plane, outputDir, intp_options):
         aligned_planes[k].points = pts[k]
         aligned_planes[k]['Velocity'] = vel[k]
 
+    print('com of aligned points', aligned_planes[0].points.mean(0) + target_com)
     # spatial interpolation 
-    interp_planes = ut.interpolate_profiles(aligned_planes, target_pts, intp_options) #ERROR IS IN THIS FUNCTION!!!
+    interp_planes = ut.interpolate_profiles(aligned_planes, target_pts, intp_options)
 
+    print('com after interpolation', interp_planes[0].points.mean(0) + target_com)
     # recenters the velocity profiles at the target profile origin for further modifications
     for k in range(num_frames):
-        interp_planes[k].points += target_com
+        interp_planes[k].points = interp_planes[k].points + target_com #+= target_com
 
+    print('com final', interp_planes[0].points.mean(0))
     vel_final = [interp_planes[k]['Velocity'] for k in range(num_frames)]
 
     ## Save profiles to .vtp (may be removed from final)
@@ -84,13 +89,17 @@ def vel_mapping(source_profile_dir, target_plane, outputDir, intp_options):
 
     print('Velocity profile mapping done')
 
-    return interp_planes, num_frames
+    return interp_planes, num_frames, source_profiles
 
-velocity_map, n_maps = vel_mapping(r'C:\Users\lmorr\Documents\TU\23-24\BEP\Velocity_profiles', pv.read('test_inlet.vtk'), r'C:\Users\lmorr\Documents\TU\23-24\BEP\Git_repository\Aortic_CFD_workflow-3', intp_options)
+""" velocity_map, n_maps, source_profiles = vel_mapping(r'C:\Users\lmorr\Documents\TU\23-24\BEP\Velocity_profiles', pv.read('test_inlet.vtk'), r'C:\Users\lmorr\Documents\TU\23-24\BEP\Git_repository\Aortic_CFD_workflow-3', intp_options)
 
+n = 0
 for i in velocity_map:
-    print(i.points.mean(0))
-    if False:
+    i = i.extract_surface()
+    source_profiles[n].plot()
+    if True:
         plt = pv.Plotter()
-        plt.add_points(i)
+        plt.add_mesh(pv.read('test_inlet.vtk'), show_edges = True, color = 'black')
+        plt.add_mesh(i)
         plt.show()
+    n = n + 1 """

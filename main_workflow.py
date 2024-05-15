@@ -134,7 +134,7 @@ if len(seeds) > 0:
 
 #Seperate the indentified surfaces in inlet/outlet/wall
 id_inlet = surface_identification[0]
-id_inlet.save('test_inlet.vtk')
+#id_inlet.save('test_inlet.vtk')
 id_outlet = surface_identification[1]
 id_wall = surface_identification[2]
 
