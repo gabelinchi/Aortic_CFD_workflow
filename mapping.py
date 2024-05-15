@@ -6,13 +6,13 @@ from glob import glob
 import pyvista as pv   
 import utils as ut   
 
-""" intp_options = {
+intp_options = {
     'zero_boundary_dist': 0.2,  # percentage of border with zero velocity (smooth damping at the border)
     'zero_backflow': True,      # set all backflow components to zero
     'kernel': 'linear',         # RBF interpolation kernel (linear is recommended)
     'smoothing': 0.5,          # interpolation smoothing, range recommended [0, 2]
     'degree': 0,
-    'hard_noslip': False}       # degree of polynomial added to the RBF interpolation matrix """
+    'hard_noslip': False}       # degree of polynomial added to the RBF interpolation matrix
 
 
 #NOTE: .vtp files are Paraview file formats
@@ -91,7 +91,7 @@ def vel_mapping(source_profile_dir, target_plane, outputDir, intp_options):
 
     return interp_planes, num_frames, source_profiles
 
-""" velocity_map, n_maps, source_profiles = vel_mapping(r'C:\Users\lmorr\Documents\TU\23-24\BEP\Velocity_profiles', pv.read('test_inlet.vtk'), r'C:\Users\lmorr\Documents\TU\23-24\BEP\Git_repository\Aortic_CFD_workflow-3', intp_options)
+velocity_map, n_maps, source_profiles = vel_mapping(r'C:\Users\lmorr\Documents\TU\23-24\BEP\Velocity_profiles', pv.read('test_inlet.vtk'), r'C:\Users\lmorr\Documents\TU\23-24\BEP\Git_repository\Aortic_CFD_workflow-3', intp_options)
 
 n = 0
 for i in velocity_map:
@@ -102,4 +102,4 @@ for i in velocity_map:
         plt.add_mesh(pv.read('test_inlet.vtk'), show_edges = True, color = 'black')
         plt.add_mesh(i)
         plt.show()
-    n = n + 1 """
+    n = n + 1
