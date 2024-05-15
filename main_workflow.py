@@ -102,6 +102,9 @@ combined_remeshed = combined_remeshed.extract_surface().triangulate()
 #Make a 3D mesh from the combined mesh
 tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, plot=show_plot)
 
+#Report the quality of the mesh
+print('3D mesh quality (mean scaled jacobian):', tetmesh.compute_cell_quality(quality_measure='scaled_jacobian')['CellQuality'].mean())
+
 #Save 3D mesh
 tetmesh.save(osp.join(temp_dir, r'3D_output_mesh.vtk'))
 
