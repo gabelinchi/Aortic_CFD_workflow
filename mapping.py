@@ -8,11 +8,11 @@ import utils as ut
 
 intp_options = {
     'zero_boundary_dist': 0.2,  # percentage of border with zero velocity (smooth damping at the border)
-    'zero_backflow': True,      # set all backflow components to zero
+    'zero_backflow': False,      # set all backflow components to zero
     'kernel': 'linear',         # RBF interpolation kernel (linear is recommended)
     'smoothing': 0.5,          # interpolation smoothing, range recommended [0, 2]
-    'degree': 0,
-    'hard_noslip': False}       # degree of polynomial added to the RBF interpolation matrix
+    'degree': 0,                # degree of polynomial added to the RBF interpolation matrix
+    'hard_noslip': False}       
 
 
 #NOTE: .vtp files are Paraview file formats
@@ -38,7 +38,6 @@ def vel_mapping(source_profile_dir, target_plane, outputDir, intp_options):
     leftmost_idx_on_target = min(range(len(target_pts[: ,0])), key = target_pts[: ,1].__getitem__)             # index of the leftmost point (most negative in y direction) in the target plane w.r.t the subject
     target_com = target_pts.mean(0)
     target_normal = target_plane.compute_normals()['Normals'].mean(0)
-    print('com of inlet', target_com)
     normals = [source_profiles[k].compute_normals()['Normals'].mean(0) for k in range(num_frames)]
     if flip_normals: normals = [normals[k] * -1 for k in range(num_frames)] #Flips the normals if flip_normals is true
 
@@ -70,7 +69,6 @@ def vel_mapping(source_profile_dir, target_plane, outputDir, intp_options):
         aligned_planes[k].points = pts[k]
         aligned_planes[k]['Velocity'] = vel[k]
 
-    print('com of aligned points', aligned_planes[0].points.mean(0) + target_com)
     # spatial interpolation 
     interp_planes = ut.interpolate_profiles(aligned_planes, target_pts, intp_options)
 
@@ -93,13 +91,16 @@ def vel_mapping(source_profile_dir, target_plane, outputDir, intp_options):
 
 velocity_map, n_maps, source_profiles = vel_mapping(r'C:\Users\lmorr\Documents\TU\23-24\BEP\Velocity_profiles', pv.read('test_inlet.vtk'), r'C:\Users\lmorr\Documents\TU\23-24\BEP\Git_repository\Aortic_CFD_workflow-3', intp_options)
 
+print(velocity_map[0]['Velocity'])
 n = 0
 for i in velocity_map:
     i = i.extract_surface()
     source_profiles[n].plot()
     if True:
         plt = pv.Plotter()
-        plt.add_mesh(pv.read('test_inlet.vtk'), show_edges = True, color = 'black')
+        #plt.add_mesh(pv.read('test_inlet.vtk'), show_edges = True, color = 'black')
+        plt.add_arrows(i.points, 20 * i['Velocity'], color = 'black')
         plt.add_mesh(i)
         plt.show()
     n = n + 1
+
