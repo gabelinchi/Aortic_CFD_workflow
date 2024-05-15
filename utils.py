@@ -71,7 +71,7 @@ def interpolate_profiles(aligned_planes, fxdpts, intp_options):
             vel_interp[k][boundary_ids, :] = 0
 
     # create new polydatas
-    interp_planes = [pv.PolyData(fxdpts).delaunay_2d(alpha=1) for _ in range(num_frames)] #original alpha = 0.1
+    interp_planes = [pv.PolyData(fxdpts).delaunay_2d() for _ in range(num_frames)] #original alpha = 0.1, removed because it is not necessary and can cause issues
     for k in range(num_frames):
         interp_planes[k]['Velocity'] = vel_interp[k]
 
