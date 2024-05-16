@@ -17,6 +17,9 @@ import identification as id
 from tkinter import Tk
 from tkinter.filedialog import askdirectory
 import mapping
+import xml.etree.ElementTree as ET
+import subprocess
+import febioxml as feb
 #----------------------------------------------------------------------------------------------------------------------------
 # Setup
 #----------------------------------------------------------------------------------------------------------------------------
@@ -161,11 +164,18 @@ if show_plot:
 
 velocity_map, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir, intp_options, show_plot)
 
-
-
 #----------------------------------------------------------------------------------------------------------------------------
 # FEBio
 #----------------------------------------------------------------------------------------------------------------------------
+
+#Create a solver compatible file based on the 3D-mesh and meshing parameters
+feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, output_dir)
+
+#Run FEBio
+FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe"
+#Use the current
+FEBio_inputfile = osp.join(temp_dir, r'simulation.feb')
+subprocess.run([FEBio_path, FEBio_inputfile], check = True)
 
 
 #Deletes all the temporary files in the temp folder (have to fix)
