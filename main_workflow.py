@@ -62,12 +62,12 @@ id_angle = 30
 
 #Mapping interpolation options
 intp_options = {
-    'zero_boundary_dist': 0.5,  # percentage of border with zero velocity (smooth damping at the border)
-    'zero_backflow': True,      # set all backflow components to zero
+    'zero_boundary_dist': 0.2,  # percentage of border with zero velocity (smooth damping at the border)
+    'zero_backflow': False,     # set all backflow components to zero
     'kernel': 'linear',         # RBF interpolation kernel (linear is recommended)
-    'smoothing': 0.5,          # interpolation smoothing, range recommended [0, 2]
-    'degree': 0,
-    'hard_noslip': False}       # degree of polynomial added to the RBF interpolation matrix
+    'smoothing': 0.5,           # interpolation smoothing, range recommended [0, 2]
+    'degree': 0,                # degree of polynomial added to the RBF interpolation matrix
+    'hard_noslip': False}       # check if no-slip condition on walls is met
 
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
@@ -134,7 +134,6 @@ if len(seeds) > 0:
 
 #Seperate the indentified surfaces in inlet/outlet/wall
 id_inlet = surface_identification[0]
-id_inlet.save('test_inlet.vtk')
 id_outlet = surface_identification[1]
 id_wall = surface_identification[2]
 
@@ -154,11 +153,9 @@ if show_plot:
 #Perform the mapping of the velocity profiles on the inlet
 #Output is a point cloud on every inlet node with the respective velocity data and the amount of mapped velocity profiles
 
-velocity_map, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir, intp_options)
+velocity_map, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir, intp_options, show_plot)
 
 
-
-print(n_maps)
 
 #----------------------------------------------------------------------------------------------------------------------------
 # FEBio
