@@ -47,7 +47,7 @@ def interpolate_profiles(aligned_planes, fxdpts, intp_options):
 
     # Set backflow to zero
     if intp_options['zero_backflow']:
-        normals = [aligned_planes[k].compute_normals()['Normals'].mean(0) * -1 for k in
+        normals = [aligned_planes[k].compute_normals()['Normals'].mean(0) * -1 for k in #Check this !!!!!!! changing the -1 changes the outcome!!!!!
                    range(num_frames)]  # Careful with the sign
         normals = [normals[k] / np.linalg.norm(normals[k]) for k in range(num_frames)]
         for k in range(num_frames):
@@ -71,7 +71,7 @@ def interpolate_profiles(aligned_planes, fxdpts, intp_options):
             vel_interp[k][boundary_ids, :] = 0
 
     # create new polydatas
-    interp_planes = [pv.PolyData(fxdpts).delaunay_2d(alpha=0.1) for _ in range(num_frames)]
+    interp_planes = [pv.PolyData(fxdpts).delaunay_2d() for _ in range(num_frames)] #original alpha = 0.1, removed because it is not necessary and can cause issues
     for k in range(num_frames):
         interp_planes[k]['Velocity'] = vel_interp[k]
 

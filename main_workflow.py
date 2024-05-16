@@ -16,6 +16,7 @@ from capping import cap
 import identification as id
 from tkinter import Tk
 from tkinter.filedialog import askdirectory
+import mapping
 #----------------------------------------------------------------------------------------------------------------------------
 # Setup
 #----------------------------------------------------------------------------------------------------------------------------
@@ -24,7 +25,8 @@ from tkinter.filedialog import askdirectory
 file_dir = osp.dirname(osp.realpath(__file__))
 temp_dir = osp.join(file_dir, r'temp')
 output_dir = osp.join(file_dir, r'output')
-input_dir = askdirectory(title='Select Input Folder') # shows dialog box and return the path  
+input_dir = askdirectory(title='Select Input Folder') # shows dialog box and return the path 
+vel_profile_dir = askdirectory(title='Select Velocity Profile Folder') # shows dialog box and return the path   
 
 os.makedirs(temp_dir, exist_ok=True)
 os.makedirs(output_dir, exist_ok=True)
@@ -58,8 +60,18 @@ tetgen_parameters = dict(
 #Angle for identification
 id_angle = 30
 
+#Mapping interpolation options
+intp_options = {
+    'zero_boundary_dist': 0.2,  # percentage of border with zero velocity (smooth damping at the border)
+    'zero_backflow': False,     # set all backflow components to zero
+    'kernel': 'linear',         # RBF interpolation kernel (linear is recommended)
+    'smoothing': 0.5,           # interpolation smoothing, range recommended [0, 2]
+    'degree': 0,                # degree of polynomial added to the RBF interpolation matrix
+    'hard_noslip': False}       # check if no-slip condition on walls is met
+
+
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = True
+show_plot = False
 
 
 print('Setup and import done')
@@ -102,6 +114,9 @@ combined_remeshed = combined_remeshed.extract_surface().triangulate()
 #Make a 3D mesh from the combined mesh
 tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, plot=show_plot)
 
+#Report the quality of the mesh
+print('3D mesh quality (mean scaled jacobian):', tetmesh.compute_cell_quality(quality_measure='scaled_jacobian')['CellQuality'].mean())
+
 #Save 3D mesh
 tetmesh.save(osp.join(temp_dir, r'3D_output_mesh.vtk'))
 
@@ -114,7 +129,7 @@ if show_plot:
 #----------------------------------------------------------------------------------------------------------------------------
 
 #Create the seeds for the surface identification based on the center points. INLET FIRST!, OUTLET SECOND!
-seeds = np.array([inlet.points.mean(0),outlet.points.mean(0)])
+seeds = np.array([inlet_cap.points.mean(0),outlet_cap.points.mean(0)])
 
 #Detect the surfaces of the 3D mesh whilst keeping the original ID's, if there is a seed delivered
 if len(seeds) > 0:
@@ -125,6 +140,7 @@ id_inlet = surface_identification[0]
 id_outlet = surface_identification[1]
 id_wall = surface_identification[2]
 
+print('Surface identification done')
 #Plot the identifies surfaces for general overview
 if show_plot:
     plt = pv.Plotter()
@@ -136,6 +152,12 @@ if show_plot:
 #----------------------------------------------------------------------------------------------------------------------------
 # Mapping
 #----------------------------------------------------------------------------------------------------------------------------
+
+#Perform the mapping of the velocity profiles on the inlet
+#Output is a point cloud on every inlet node with the respective velocity data and the amount of mapped velocity profiles
+
+velocity_map, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir, intp_options, show_plot)
+
 
 
 #----------------------------------------------------------------------------------------------------------------------------
