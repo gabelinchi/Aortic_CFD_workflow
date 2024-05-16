@@ -54,8 +54,11 @@ mmg_parameters = {
 
 tetgen_parameters = dict(
     order=1, 
-    mindihedral=20, 
-    minratio=1.5)
+    mindihedral=10, 
+    minratio=1.5,
+    nobisect=True,
+    fixedvolume=True,
+    maxvolume=1)
 
 #Angle for identification
 id_angle = 30
@@ -71,7 +74,7 @@ intp_options = {
 
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = False
+show_plot = True
 
 
 print('Setup and import done')
