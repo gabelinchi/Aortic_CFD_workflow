@@ -53,12 +53,13 @@ mmg_parameters = {
     'detection angle': '35'}
 
 tetgen_parameters = dict(
-    order=1, 
-    mindihedral=10, 
-    minratio=1.5,
     nobisect=True,
     fixedvolume=True,
-    maxvolume=1)
+    quality=True,
+    maxvolume=1,
+    order=1, 
+    mindihedral=35, 
+    minratio=2)
 
 #Angle for identification
 id_angle = 30
@@ -74,7 +75,7 @@ intp_options = {
 
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = True
+show_plot = False
 
 
 print('Setup and import done')
@@ -110,15 +111,41 @@ pv.save_meshio(osp.join(temp_dir, r'combined_mesh.mesh'), combined)
 
 #Run remesh (takes predetermined internally defined file path as input, DON'T CHANGE)
 combined_remeshed = remesh.remesh_edge_detect(osp.join(temp_dir, r'combined_mesh.mesh'), osp.join(temp_dir, r'combined_mmg.mesh'), temp_dir, mmg_parameters, plot=show_plot)
-#triangulation step to make sure Tetgen only gets triangels as input
+#triangulation step to make sure Tetgen only gets triangles as input
 combined_remeshed = combined_remeshed.extract_surface().triangulate()
 
-
 #Make a 3D mesh from the combined mesh
-tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, plot=show_plot)
+combined_remeshed = combined_remeshed.delaunay_3d()
+pv.save_meshio('combined_remeshed.mesh', combined_remeshed)
+
+""" tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, plot=show_plot) """
+
+import subprocess as sub
+import meshio
+#sub.run(f"{'py -m mmg3d -hausd 1 combined_remeshed.mesh combined_remeshed_mmg.mesh'}")
+sub.run(f"{'py -m mmg3d -hausd 0.001 -hgrad 1.3 -hmax 0.05 combined_remeshed.mesh combined_remeshed_mmg.mesh'}")
+meshio.write('combined_remeshed_mmg.vtk', meshio.read('combined_remeshed_mmg.mesh'))
+tetmesh = pv.read('combined_remeshed_mmg.vtk')
+
 
 #Report the quality of the mesh
-print('3D mesh quality (mean scaled jacobian):', tetmesh.compute_cell_quality(quality_measure='scaled_jacobian')['CellQuality'].mean())
+jac = tetmesh.compute_cell_quality(quality_measure='scaled_jacobian')['CellQuality']
+aspect = tetmesh.compute_cell_quality(quality_measure='aspect_ratio')['CellQuality']
+print('3D mesh quality (mean scaled jacobian)')
+print('min:', jac.min())
+print('max:', jac.max())
+print('avg:', jac.mean())
+print('3D mesh quality (aspect ratio)')
+print('min:', aspect.min())
+print('max:', aspect.max())
+print('avg:', aspect.mean())
+
+#Plot bad cells
+plt = pv.Plotter()
+plt.add_mesh(tetmesh, style='wireframe')
+plt.add_mesh(tetmesh.extract_cells(jac<0.1), color='red', show_edges=True)
+plt.add_text('Bad cells')
+plt.show()
 
 #Save 3D mesh
 tetmesh.save(osp.join(temp_dir, r'3D_output_mesh.vtk'))
