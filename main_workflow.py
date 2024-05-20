@@ -12,6 +12,7 @@ import remesh
 import utils as ut
 import cutting
 import volume_mesh
+import volume_remesh_mmg
 from capping import cap
 import identification as id
 from tkinter import Tk
@@ -50,6 +51,11 @@ outlet = pv.read(outlet_path)
 mmg_parameters = {
     'mesh_density': '0.1',
     'sizing': '1',
+    'detection angle': '35'}
+
+mmg3d_parameters = {
+    'hausd': '0.1',
+    'max_edgelength': '1',
     'detection angle': '35'}
 
 tetgen_parameters = dict(
@@ -105,37 +111,19 @@ pv.save_meshio(osp.join(temp_dir, r'combined_mesh.mesh'), combined)
 
 #Run remesh (takes predetermined internally defined file path as input, DON'T CHANGE)
 combined_remeshed = remesh.remesh_edge_detect(osp.join(temp_dir, r'combined_mesh.mesh'), osp.join(temp_dir, r'combined_mmg.mesh'), temp_dir, mmg_parameters, plot=show_plot)
+
 #triangulation step to make sure Tetgen only gets triangles as input
 combined_remeshed = combined_remeshed.extract_surface().triangulate()
 
-#Make a 3D mesh from the combined mesh
+#Make an initial 3D mesh from the combined mesh using TetGen
 combined_remeshed = combined_remeshed
-
-
 tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, plot=show_plot)
 
+#Save initial mesh
+pv.save_meshio(osp.join(temp_dir, r'initial_volume_mesh.mesh'), tetmesh)
 
-# Mmg3d experimentation------------------------------------------------------------------------
-pv.save_meshio('combined_remeshed.mesh', tetmesh)
-import subprocess as sub
-import meshio
-#sub.run(f"{'py -m mmg3d -hausd 1 combined_remeshed.mesh combined_remeshed_mmg.mesh'}")
-print('start')
-sub.run(f"{'py -m mmg3d -hausd 0.1 -hmax 1 combined_remeshed.mesh combined_remeshed_mmg.mesh'}")
-print('stop')
-meshio.write('combined_remeshed_mmg.vtk', meshio.read('combined_remeshed_mmg.mesh'))
-tetmesh = pv.read('combined_remeshed_mmg.vtk')
-
-# Remove lines
-cell_types = tetmesh.celltypes
-mask = cell_types == 10
-tetmesh = tetmesh.extract_cells(mask)
-
-print('tetmesh print:')
-print(tetmesh)
-tetmesh.plot(show_edges=True, text='lines removed')
-#----------------------------------------------------------------------------------------------
-
+#Refine 3D mesh with mmg3d
+tetmesh = volume_remesh_mmg.mmg3d(osp.join(temp_dir, r'initial_volume_mesh.mesh'), osp.join(temp_dir, r'mmg3d_mesh.mesh'), temp_dir, mmg3d_parameters, plot=show_plot)
 
 # Calculate mesh stats and quality
 jac = tetmesh.compute_cell_quality(quality_measure='scaled_jacobian')['CellQuality']
@@ -168,7 +156,7 @@ plt.show()
 #Plot bisection------------------------------
 
 # get cell centroids
-print(tetmesh.cells)
+
 cells = tetmesh.cells.reshape(-1, 5)[:, 1:]
 cell_center = tetmesh.points[cells].mean(1)
 
