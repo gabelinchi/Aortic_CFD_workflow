@@ -53,13 +53,7 @@ mmg_parameters = {
     'detection angle': '35'}
 
 tetgen_parameters = dict(
-    nobisect=True,
-    fixedvolume=True,
-    quality=True,
-    maxvolume=1,
-    order=1, 
-    mindihedral=35, 
-    minratio=2)
+    nobisect=True)
 
 #Angle for identification
 id_angle = 30
@@ -115,22 +109,45 @@ combined_remeshed = remesh.remesh_edge_detect(osp.join(temp_dir, r'combined_mesh
 combined_remeshed = combined_remeshed.extract_surface().triangulate()
 
 #Make a 3D mesh from the combined mesh
-combined_remeshed = combined_remeshed.delaunay_3d()
-pv.save_meshio('combined_remeshed.mesh', combined_remeshed)
+combined_remeshed = combined_remeshed
 
-""" tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, plot=show_plot) """
 
+tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, plot=show_plot)
+
+
+# Mmg3d experimentation------------------------------------------------------------------------
+pv.save_meshio('combined_remeshed.mesh', tetmesh)
 import subprocess as sub
 import meshio
 #sub.run(f"{'py -m mmg3d -hausd 1 combined_remeshed.mesh combined_remeshed_mmg.mesh'}")
-sub.run(f"{'py -m mmg3d -hausd 0.001 -hgrad 1.3 -hmax 0.05 combined_remeshed.mesh combined_remeshed_mmg.mesh'}")
+print('start')
+sub.run(f"{'py -m mmg3d -hausd 0.1 -hmax 1 combined_remeshed.mesh combined_remeshed_mmg.mesh'}")
+print('stop')
 meshio.write('combined_remeshed_mmg.vtk', meshio.read('combined_remeshed_mmg.mesh'))
 tetmesh = pv.read('combined_remeshed_mmg.vtk')
 
+# Remove lines
+cell_types = tetmesh.celltypes
+mask = cell_types == 10
+tetmesh = tetmesh.extract_cells(mask)
 
-#Report the quality of the mesh
+print('tetmesh print:')
+print(tetmesh)
+tetmesh.plot(show_edges=True, text='lines removed')
+#----------------------------------------------------------------------------------------------
+
+
+# Calculate mesh stats and quality
 jac = tetmesh.compute_cell_quality(quality_measure='scaled_jacobian')['CellQuality']
 aspect = tetmesh.compute_cell_quality(quality_measure='aspect_ratio')['CellQuality']
+num_points = tetmesh.number_of_points
+num_cells = tetmesh.number_of_cells
+
+# Print report
+print('--------------------------------------------------------------')
+print('3D mesh report:')
+print('num points:', num_points)
+print('num_cells: ', num_cells)
 print('3D mesh quality (mean scaled jacobian)')
 print('min:', jac.min())
 print('max:', jac.max())
@@ -139,13 +156,34 @@ print('3D mesh quality (aspect ratio)')
 print('min:', aspect.min())
 print('max:', aspect.max())
 print('avg:', aspect.mean())
+print('--------------------------------------------------------------')
 
 #Plot bad cells
 plt = pv.Plotter()
 plt.add_mesh(tetmesh, style='wireframe')
-plt.add_mesh(tetmesh.extract_cells(jac<0.1), color='red', show_edges=True)
+plt.add_mesh(tetmesh.extract_cells(jac<0.3), color='red', show_edges=True)
 plt.add_text('Bad cells')
 plt.show()
+
+#Plot bisection------------------------------
+
+# get cell centroids
+print(tetmesh.cells)
+cells = tetmesh.cells.reshape(-1, 5)[:, 1:]
+cell_center = tetmesh.points[cells].mean(1)
+
+# extract cells below the 0 xy plane
+mask = cell_center[:, 2] < 0
+cell_ind = mask.nonzero()[0]
+subgrid = tetmesh.extract_cells(cell_ind)
+
+# advanced plotting
+plotter = pv.Plotter()
+plotter.add_mesh(subgrid, 'lightgrey', lighting=True, show_edges=True)
+plotter.add_mesh(combined_remeshed, 'r', 'wireframe')
+plotter.add_legend([[' Input Mesh ', 'r'], [' Tessellated Mesh ', 'black']])
+plotter.show()
+#--------------------------------------------
 
 #Save 3D mesh
 tetmesh.save(osp.join(temp_dir, r'3D_output_mesh.vtk'))
