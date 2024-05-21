@@ -157,8 +157,8 @@ if show_plot:
     plt.add_text('Bad cells')
     plt.show()
 
-#Plot bisection------------------------------
 
+#Plot bisection------------------------------
 if show_plot:
     # get cell centroids
 
