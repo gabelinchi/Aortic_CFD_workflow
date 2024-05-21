@@ -22,7 +22,7 @@ def cap(wall, plot=False):
     
     #Plot extracted edges
     if plot==True:
-        edges.plot()
+        edges.plot(color='red')
     
     # Split edges into separate data
     edges = edges.connectivity('all')

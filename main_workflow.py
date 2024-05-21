@@ -57,8 +57,8 @@ mmg_parameters = {
     'detection angle': '35'}
 
 mmg3d_parameters = {
-    'hausd': '0.1',
-    'max_edgelength': '1',
+    'hausd': '0.02',
+    'max_edgelength': '2',
     'detection angle': '35'}
 
 tetgen_parameters = dict(
@@ -202,7 +202,7 @@ id_outlet = surface_identification[1]
 id_wall = surface_identification[2]
 
 print('Surface identification done')
-#Plot the identifies surfaces for general overview
+#Plot the identified surfaces for general overview
 if show_plot:
     plt = pv.Plotter()
     plt.add_mesh(id_inlet, show_edges = True, color = 'red')
@@ -224,10 +224,10 @@ velocity_map, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir
 #----------------------------------------------------------------------------------------------------------------------------
 
 #Create a solver compatible file based on the 3D-mesh and meshing parameters
-feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, output_dir)
+feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir)
 
 #Run FEBio
-FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe"
+FEBio_path = r"C:/Program Files/bin/febio4.exe"
 #Use the current
 FEBio_inputfile = osp.join(temp_dir, r'simulation.feb')
 subprocess.run([FEBio_path, FEBio_inputfile], check = True)
@@ -239,5 +239,3 @@ for f in temp_files:
     os.remove(f) """
 
 print('Done!')
-
-print('koalo')
