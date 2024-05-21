@@ -229,7 +229,7 @@ feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, output_dir)
 #Run FEBio
 FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe"
 #Use the current
-FEBio_inputfile = osp.join(output_dir, r'simulation.feb')
+FEBio_inputfile = osp.join(temp_dir, r'simulation.feb')
 subprocess.run([FEBio_path, FEBio_inputfile], check = True)
 
 
@@ -240,3 +240,4 @@ for f in temp_files:
 
 print('Done!')
 
+print('koalo')

@@ -9,7 +9,7 @@ import tetgen as tet
 import xml.etree.ElementTree as ET
 import subprocess
 
-def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, output_dir):
+def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     #constants:
     T = 4
     P = 0
@@ -212,12 +212,12 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, output_dir):
         element = ET.Element(element_name)
         element.text = ','.join(map(str, array))   #add array as a string
         element.set('id', str(i+1))                #set element id (python counts from 0, FEBio from 1)
-    # if i > 0:
-        # BC2_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
-        BC2_list.append(element)
+    if i > 0:
+         BC2_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
+    BC2_list.append(element)
 
     # Append XML elements to the 'Mesh/Surface' element
-    Element = root.find('.//Mesh/Surface[@name = "ZeroFluidDilatation3"]')
+    Element = root.find('.//Mesh/Surface[@name = "ZeroFluidDilatation1"]')
     if Element is not None:
         for tri3 in BC2_list:
             Element.append(tri3)                   #add the nodes to the element <Elements>
@@ -290,57 +290,86 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, output_dir):
                 print(f"Element '{variable}' under '{parent}' not found.")
         return
     #single parent
-    Parent3('Step', 'step', 'Control', 'analysis', str(analysis))
-    Parent3('Step', 'step', 'Control', 'time_steps', str(time_steps))
-    Parent3('Step', 'step', 'Control', 'step_size', str(step_size))
-    Parent3('Step', 'step', 'Control', 'plot_zero_state', str(plot_zero_state))
+    Parent1('Control', 'analysis', str(analysis))
+    Parent1('Control', 'time_steps', str(time_steps))
+    Parent1('Control', 'step_size', str(step_size))
+    Parent1('Control', 'plot_zero_state', str(plot_zero_state))
 
     plot_range_str = ','.join(str(x) for x in plot_range)
-    Parent3('Step', 'step', 'Control', 'plot_range', plot_range_str)
-    Parent3('Step', 'step', 'Control', 'plot_level', str(plot_level))
-    Parent3('Step', 'step', 'Control', 'output_level', str(output_level))
-    Parent3('Step', 'step', 'Control', 'plot_stride', str(plot_stride))
-    Parent3('Step', 'step', 'Control', 'output_stride', str(output_stride))
-    Parent3('Step', 'step', 'Control', 'adaptor_re_solve', str(adaptor_re_solve))
+    Parent1('Control', 'plot_range', plot_range_str)
+    Parent1('Control', 'plot_level', str(plot_level))
+    Parent1('Control', 'output_level', str(output_level))
+    Parent1('Control', 'plot_stride', str(plot_stride))
+    Parent1('Control', 'output_stride', str(output_stride))
+    Parent1('Control', 'adaptor_re_solve', str(adaptor_re_solve))
 
 
     #double parent
-    Parent4('Step', 'step','Control', 'time_stepper', 'max_retries', str(max_retries))
-    Parent4('Step', 'step','Control', 'time_stepper', 'opt_iter', str(opt_iter))
-    Parent4('Step', 'step','Control', 'time_stepper', 'dtmin', str(dtmin))
-    Parent4('Step', 'step','Control', 'time_stepper', 'aggressiveness', str(aggressiveness))
-    Parent4('Step', 'step','Control', 'time_stepper', 'cutback', str(cutback))
-    Parent4('Step', 'step','Control', 'time_stepper', 'dtforce', str(dtforce))
+    Parent2('Control', 'time_stepper', 'max_retries', str(max_retries))
+    Parent2('Control', 'time_stepper', 'opt_iter', str(opt_iter))
+    Parent2('Control', 'time_stepper', 'dtmin', str(dtmin))
+    Parent2('Control', 'time_stepper', 'aggressiveness', str(aggressiveness))
+    Parent2('Control', 'time_stepper', 'cutback', str(cutback))
+    Parent2('Control', 'time_stepper', 'dtforce', str(dtforce))
+    Parent2('Control', 'time_stepper', 'max_retries', str(max_retries))
+    Parent2('Control', 'time_stepper', 'opt_iter', str(opt_iter))
+    Parent2('Control', 'time_stepper', 'dtmin', str(dtmin))
+    Parent2('Control', 'time_stepper', 'aggressiveness', str(aggressiveness))
+    Parent2('Control', 'time_stepper', 'cutback', str(cutback))
+    Parent2('Control', 'time_stepper', 'dtforce', str(dtforce))
     Parent2('Material', 'material', 'density', str(density))
     Parent2('Material', 'material', 'k', str(k))
 
-    Parent4('Step', 'step','Control','solver', 'symmetric_stiffness', str(symmetric_stiffness))
-    Parent4('Step', 'step','Control', 'solver','equation_scheme', str(equation_scheme))
-    Parent4('Step', 'step','Control','solver', 'equation_order', str(equation_order))
-    Parent4('Step', 'step','Control','solver', 'optimize_bw', str(optimize_bw))
-    Parent4('Step', 'step','Control', 'solver','lstol', str(lstol))
-    Parent4('Step', 'step','Control', 'solver','lsmin', str(lsmin))
-    Parent4('Step', 'step','Control','solver', 'lsiter', str(lsiter))
-    Parent4('Step', 'step','Control','solver', 'max_refs', str(max_refs))
-    Parent4('Step', 'step','Control','solver', 'check_zero_diagonal', str(check_zero_diagonal))
-    Parent4('Step', 'step','Control','solver', 'zero_diagonal_tol', str(zero_diagonal_tol))
-    Parent4('Step', 'step','Control','solver', 'force_partition', str(force_partition))
-    Parent4('Step', 'step','Control','solver', 'reform_each_time_step', str(reform_each_time_step))
-    Parent4('Step', 'step','Control','solver', 'reform_augment', str(reform_augment))
-    Parent4('Step', 'step','Control','solver', 'diverge_reform', str(diverge_reform))
-    Parent4('Step', 'step','Control','solver', 'min_residual', str(min_residual))
-    Parent4('Step', 'step','Control','solver', 'max_residual', str(max_residual))
-    Parent4('Step', 'step','Control','solver', 'vtol', str(vtol))
-    Parent4('Step', 'step','Control','solver', 'ftol', str(ftol))
-    Parent4('Step', 'step','Control','solver', 'rhoi', str(rhoi))
-    Parent4('Step', 'step','Control','solver', 'etol', str(etol))
-    Parent4('Step', 'step','Control','solver', 'rtol', str(rtol))
-    Parent4('Step', 'step','Control','solver', 'predictor', str(predictor))
-    Parent4('Step', 'step','Control','solver', 'min_volume_ratio', str(min_volume_ratio))
+    Parent2('Control','solver', 'symmetric_stiffness', str(symmetric_stiffness))
+    Parent2('Control', 'solver','equation_scheme', str(equation_scheme))
+    Parent2('Control','solver', 'equation_order', str(equation_order))
+    Parent2('Control','solver', 'optimize_bw', str(optimize_bw))
+    Parent2('Control', 'solver','lstol', str(lstol))
+    Parent2('Control', 'solver','lsmin', str(lsmin))
+    Parent2('Control','solver', 'lsiter', str(lsiter))
+    Parent2('Control','solver', 'max_refs', str(max_refs))
+    Parent2('Control','solver', 'check_zero_diagonal', str(check_zero_diagonal))
+    Parent2('Control','solver', 'zero_diagonal_tol', str(zero_diagonal_tol))
+    Parent2('Control','solver', 'force_partition', str(force_partition))
+    Parent2('Control','solver', 'reform_each_time_step', str(reform_each_time_step))
+    Parent2('Control','solver', 'reform_augment', str(reform_augment))
+    Parent2('Control','solver', 'diverge_reform', str(diverge_reform))
+    Parent2('Control','solver', 'min_residual', str(min_residual))
+    Parent2('Control','solver', 'max_residual', str(max_residual))
+    Parent2('Control','solver', 'vtol', str(vtol))
+    Parent2('Control','solver', 'ftol', str(ftol))
+    Parent2('Control','solver', 'rhoi', str(rhoi))
+    Parent2('Control','solver', 'etol', str(etol))
+    Parent2('Control','solver', 'rtol', str(rtol))
+    Parent2('Control','solver', 'predictor', str(predictor))
+    Parent2('Control','solver', 'min_volume_ratio', str(min_volume_ratio))
+    Parent2('Control','solver', 'symmetric_stiffness', str(symmetric_stiffness))
+    Parent2('Control', 'solver','equation_scheme', str(equation_scheme))
+    Parent2('Control','solver', 'equation_order', str(equation_order))
+    Parent2('Control','solver', 'optimize_bw', str(optimize_bw))
+    Parent2('Control', 'solver','lstol', str(lstol))
+    Parent2('Control', 'solver','lsmin', str(lsmin))
+    Parent2('Control','solver', 'lsiter', str(lsiter))
+    Parent2('Control','solver', 'max_refs', str(max_refs))
+    Parent2('Control','solver', 'check_zero_diagonal', str(check_zero_diagonal))
+    Parent2('Control','solver', 'zero_diagonal_tol', str(zero_diagonal_tol))
+    Parent2('Control','solver', 'force_partition', str(force_partition))
+    Parent2('Control','solver', 'reform_each_time_step', str(reform_each_time_step))
+    Parent2('Control','solver', 'reform_augment', str(reform_augment))
+    Parent2('Control','solver', 'diverge_reform', str(diverge_reform))
+    Parent2('Control','solver', 'min_residual', str(min_residual))
+    Parent2('Control','solver', 'max_residual', str(max_residual))
+    Parent2('Control','solver', 'vtol', str(vtol))
+    Parent2('Control','solver', 'ftol', str(ftol))
+    Parent2('Control','solver', 'rhoi', str(rhoi))
+    Parent2('Control','solver', 'etol', str(etol))
+    Parent2('Control','solver', 'rtol', str(rtol))
+    Parent2('Control','solver', 'predictor', str(predictor))
+    Parent2('Control','solver', 'min_volume_ratio', str(min_volume_ratio))
 
-    Parent4('Step', 'step','Boundary', 'bc', 'wx_dof', str(int(zerofluidvelocity_x)))
-    Parent4('Step', 'step','Boundary', 'bc', 'wy_dof', str(int(zerofluidvelocity_y)))
-    Parent4('Step', 'step','Boundary', 'bc', 'wz_dof', str(int(zerofluidvelocity_z)))
+    Parent2('Boundary', 'bc', 'wx_dof', str(int(zerofluidvelocity_x)))
+    Parent2('Boundary', 'bc', 'wy_dof', str(int(zerofluidvelocity_y)))
+    Parent2('Boundary', 'bc', 'wz_dof', str(int(zerofluidvelocity_z)))
 
     Parent2('Loads', 'surface_load', 'velocity', str(velocity))
     Parent2('Loads', 'surface_load', 'prescribe_nodal_velocities', str(int(prescribe_nodal_velocities)))
@@ -363,6 +392,6 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, output_dir):
     viscous.set('type',str(viscoustype))
     """
     #create FEBio file
-    tree.write(osp.join(output_dir, r'simulation.feb'), encoding='ISO-8859-1', xml_declaration=True,)
+    tree.write(osp.join(temp_dir, r'simulation.feb'), encoding='ISO-8859-1', xml_declaration=True,)
 
     return
