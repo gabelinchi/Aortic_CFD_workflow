@@ -150,30 +150,32 @@ print('avg:', aspect.mean())
 print('--------------------------------------------------------------')
 
 #Plot bad cells
-plt = pv.Plotter()
-plt.add_mesh(tetmesh, style='wireframe')
-plt.add_mesh(tetmesh.extract_cells(jac<0.3), color='red', show_edges=True)
-plt.add_text('Bad cells')
-plt.show()
+if show_plot:
+    plt = pv.Plotter()
+    plt.add_mesh(tetmesh, style='wireframe')
+    plt.add_mesh(tetmesh.extract_cells(jac<0.3), color='red', show_edges=True)
+    plt.add_text('Bad cells')
+    plt.show()
 
 #Plot bisection------------------------------
 
-# get cell centroids
+if show_plot:
+    # get cell centroids
 
-cells = tetmesh.cells.reshape(-1, 5)[:, 1:]
-cell_center = tetmesh.points[cells].mean(1)
+    cells = tetmesh.cells.reshape(-1, 5)[:, 1:]
+    cell_center = tetmesh.points[cells].mean(1)
 
-# extract cells below the 0 xy plane
-mask = cell_center[:, 2] < 0
-cell_ind = mask.nonzero()[0]
-subgrid = tetmesh.extract_cells(cell_ind)
+    # extract cells below the 0 xy plane
+    mask = cell_center[:, 2] < 0
+    cell_ind = mask.nonzero()[0]
+    subgrid = tetmesh.extract_cells(cell_ind)
 
-# advanced plotting
-plotter = pv.Plotter()
-plotter.add_mesh(subgrid, 'lightgrey', lighting=True, show_edges=True)
-plotter.add_mesh(combined_remeshed, 'r', 'wireframe')
-plotter.add_legend([[' Input Mesh ', 'r'], [' Tessellated Mesh ', 'black']])
-plotter.show()
+    # advanced plotting
+    plotter = pv.Plotter()
+    plotter.add_mesh(subgrid, 'lightgrey', lighting=True, show_edges=True)
+    plotter.add_mesh(combined_remeshed, 'r', 'wireframe')
+    plotter.add_legend([[' Input Mesh ', 'r'], [' Tessellated Mesh ', 'black']])
+    plotter.show()
 #--------------------------------------------
 
 #Save 3D mesh
@@ -227,7 +229,7 @@ feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, output_dir)
 #Run FEBio
 FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe"
 #Use the current
-FEBio_inputfile = osp.join(temp_dir, r'simulation.feb')
+FEBio_inputfile = osp.join(output_dir, r'simulation.feb')
 subprocess.run([FEBio_path, FEBio_inputfile], check = True)
 
 
