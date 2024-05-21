@@ -21,6 +21,7 @@ import mapping
 import xml.etree.ElementTree as ET
 import subprocess
 import febioxml as feb
+import shutil
 #----------------------------------------------------------------------------------------------------------------------------
 # Setup
 #----------------------------------------------------------------------------------------------------------------------------
@@ -224,19 +225,18 @@ velocity_map, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir
 #----------------------------------------------------------------------------------------------------------------------------
 
 #Create a solver compatible file based on the 3D-mesh and meshing parameters
-feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, output_dir)
+#feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, output_dir)
 
 #Run FEBio
-FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe"
+#FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe"
 #Use the current
-FEBio_inputfile = osp.join(output_dir, r'simulation.feb')
-subprocess.run([FEBio_path, FEBio_inputfile], check = True)
+#FEBio_inputfile = osp.join(output_dir, r'simulation.feb')
+#subprocess.run([FEBio_path, FEBio_inputfile], check = True)
 
 
-#Deletes all the temporary files in the temp folder (have to fix)
-""" temp_files = glob(temp_dir)
-for f in temp_files:
-    os.remove(f) """
+#Deletes the temporary folder (might want to modify it to only delete the files)
+shutil.rmtree(temp_dir)
+
 
 print('Done!')
 
