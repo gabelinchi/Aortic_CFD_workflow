@@ -49,7 +49,6 @@ def remesh(inlet_path, wall_path, output_path, parameters, plot=False):
 def remesh_edge_detect(in_path, out_path, temp_path, parameters, plot=False):
     '''
     Remeshes geometry using mmg with edge detection, saves a .mesh and returns pyvista PolyData/UnstructuredGrid
-    Detection angle and filenames are still hardcoded, should be fixed
     :in_path : path to input file (.mesh)
     :out_path : path to output file (.mesh)
     :parameters : dict of mmg parameters
