@@ -20,12 +20,11 @@ def mmg3d(in_path, out_path, temp_path, parameters, plot=False):
     print('Start 3D mesh refinement')
 
     hausd = parameters['hausd']
-    sizing = parameters['max_edgelength']
     angle = parameters['detection angle']
     ind = ' '
 
     # Run mmg
-    sub.run(f"{'py -m mmg3d -hausd'}{ind}{hausd}{ind}{'-hmax'}{ind}{sizing}{ind}{'-ar'}{ind}{angle}{ind}{in_path}{ind}{out_path}")
+    sub.run(f"{'py -m mmg3d -hausd'}{ind}{hausd}{ind}{'-ar'}{ind}{angle}{ind}{in_path}{ind}{out_path}")
 
     # Convert back to .vtk
     meshio.write(osp.join(temp_path, r'temp_for_plot_3d_remesh.vtk'), meshio.read(out_path))

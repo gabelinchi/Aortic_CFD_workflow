@@ -21,6 +21,7 @@ import mapping
 import xml.etree.ElementTree as ET
 import subprocess
 import febioxml as feb
+import write_sol
 #----------------------------------------------------------------------------------------------------------------------------
 # Setup
 #----------------------------------------------------------------------------------------------------------------------------
@@ -57,8 +58,7 @@ mmg_parameters = {
     'detection angle': '35'}
 
 mmg3d_parameters = {
-    'hausd': '0.02',
-    'max_edgelength': '2',
+    'hausd': '0.1',
     'detection angle': '35'}
 
 tetgen_parameters = dict(
@@ -122,7 +122,11 @@ combined_remeshed = combined_remeshed.extract_surface().triangulate()
 combined_remeshed = combined_remeshed
 tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, plot=show_plot)
 
+#Create a .sol file for mmg3d
+write_sol.get_bl_nodes(tetmesh, 1, 10, 2, osp.join(temp_dir, r'initial_volume_mesh.sol'))
+
 #Save initial mesh
+tetmesh.point_data.clear()
 pv.save_meshio(osp.join(temp_dir, r'initial_volume_mesh.mesh'), tetmesh)
 
 #Refine 3D mesh with mmg3d
@@ -159,7 +163,7 @@ if show_plot:
 
 
 #Plot bisection------------------------------
-if show_plot:
+if show_plot==False:
     # get cell centroids
 
     cells = tetmesh.cells.reshape(-1, 5)[:, 1:]
