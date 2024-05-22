@@ -62,6 +62,9 @@ mmg3d_parameters = {
     'detection angle': '35'}
 
 tetgen_parameters = dict(
+    order=1, 
+    mindihedral=20, 
+    minratio=1.5,
     nobisect=True)
 
 #Angle for identification
@@ -123,7 +126,7 @@ combined_remeshed = combined_remeshed
 tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, plot=show_plot)
 
 #Create a .sol file for mmg3d
-write_sol.get_bl_nodes(tetmesh, 1, 10, 2, osp.join(temp_dir, r'initial_volume_mesh.sol'))
+write_sol.get_bl_nodes(tetmesh, 1, 10, 1, osp.join(temp_dir, r'initial_volume_mesh.sol'))
 
 #Save initial mesh
 tetmesh.point_data.clear()
