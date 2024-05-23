@@ -240,4 +240,3 @@ for f in temp_files:
 
 print('Done!')
 
-print('koalo')
