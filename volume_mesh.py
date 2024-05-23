@@ -22,21 +22,14 @@ def volume_meshing(combined_mesh, tetgen_parameters, plot=False):
     if plot:
         grid.plot(show_edges=True)
 
-        # get cell centroids
-        cells = grid.cells.reshape(-1, 5)[:, 1:]
-        cell_center = grid.points[cells].mean(1)
-
-        # extract cells below the 0 xy plane
-        mask = cell_center[:, 2] < 0
-        cell_ind = mask.nonzero()[0]
-        subgrid = grid.extract_cells(cell_ind)
-
+        clipped = grid.clip('z', crinkle=True)
         # advanced plotting
         plotter = pv.Plotter()
-        plotter.add_mesh(subgrid, 'lightgrey', lighting=True, show_edges=True)
+        plotter.add_mesh(clipped, 'lightgrey', lighting=True, show_edges=True)
         plotter.add_mesh(combined_mesh, 'r', 'wireframe')
         plotter.add_legend([[' Input Mesh ', 'r'],
                             [' Tessellated Mesh ', 'black']])
+        plotter.add_text('Initial 3D mesh')
         plotter.show()
 
     return grid

@@ -81,7 +81,7 @@ intp_options = {
 
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = False
+show_plot = True
 
 
 print('Setup and import done')
@@ -126,10 +126,11 @@ combined_remeshed = combined_remeshed
 tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, plot=show_plot)
 
 #Create a .sol file for mmg3d
-write_sol.get_bl_nodes(tetmesh, 1, 10, 1, osp.join(temp_dir, r'initial_volume_mesh.sol'))
+write_sol.get_bl_nodes(tetmesh, 1, 10, 1, osp.join(temp_dir, r'initial_volume_mesh.sol'), plot=show_plot)
 
 #Save initial mesh
 tetmesh.point_data.clear()
+tetmesh.cell_data.clear()
 pv.save_meshio(osp.join(temp_dir, r'initial_volume_mesh.mesh'), tetmesh)
 
 #Refine 3D mesh with mmg3d
@@ -166,22 +167,14 @@ if show_plot:
 
 
 #Plot bisection------------------------------
-if show_plot==False:
-    # get cell centroids
-
-    cells = tetmesh.cells.reshape(-1, 5)[:, 1:]
-    cell_center = tetmesh.points[cells].mean(1)
-
-    # extract cells below the 0 xy plane
-    mask = cell_center[:, 2] < 0
-    cell_ind = mask.nonzero()[0]
-    subgrid = tetmesh.extract_cells(cell_ind)
-
+if show_plot:
+    clipped = tetmesh.clip('z', crinkle=True)
     # advanced plotting
     plotter = pv.Plotter()
-    plotter.add_mesh(subgrid, 'lightgrey', lighting=True, show_edges=True)
+    plotter.add_mesh(clipped, 'lightgrey', lighting=True, show_edges=True)
     plotter.add_mesh(combined_remeshed, 'r', 'wireframe')
     plotter.add_legend([[' Input Mesh ', 'r'], [' Tessellated Mesh ', 'black']])
+    plotter.add_text('Refined 3D mesh')
     plotter.show()
 #--------------------------------------------
 

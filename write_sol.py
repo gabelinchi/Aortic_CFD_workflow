@@ -5,7 +5,7 @@ import os.path as osp
 
 
 
-def get_bl_nodes(mesh, dist, dlow, dhigh, dir):
+def get_bl_nodes(mesh, dist, dlow, dhigh, dir, plot=False):
     print('start tagging')
     surf = mesh.extract_surface()
     closest_points = surf.find_closest_cell(mesh.points, return_closest_point=True)[1]
@@ -14,22 +14,14 @@ def get_bl_nodes(mesh, dist, dlow, dhigh, dir):
     mesh["sol"] = density
     length = len(density)
     
-    """ # get cell centroids
-    plotmesh = mesh
-    cells = plotmesh.cells.reshape(-1, 5)[:, 1:]
-    cell_center = plotmesh.points[cells].mean(1)
-
-    # extract cells below the 0 xy plane
-    mask = cell_center[:, 2] < 0
-    cell_ind = mask.nonzero()[0]
-    subgrid = plotmesh.extract_cells(cell_ind)
-
-    # advanced plotting
-    plotter = pv.Plotter()
-    plotter.add_mesh(subgrid, 'lightgrey', lighting=True, show_edges=True, scalars='sol')
-    plotter.add_mesh(surf, 'r', 'wireframe')
-    plotter.add_legend([[' Input Mesh ', 'r'], [' Tessellated Mesh ', 'black']])
-    plotter.show() """
+    if plot:
+        clipped = mesh.clip('z', crinkle=True)
+        plotter = pv.Plotter()
+        plotter.add_mesh(clipped, 'lightgrey', lighting=True, show_edges=True, scalars='sol')
+        plotter.add_mesh(surf, 'r', 'wireframe')
+        plotter.add_legend([[' Input Mesh ', 'r'], [' Tessellated Mesh ', 'black']])
+        plotter.add_text('Initial 3D mesh with local tags')
+        plotter.show()
 
     header = 'MeshVersionFormatted \n2\n\nDimension 3\n\nSolAtVertices\n' + str(length) + '\n1 1\n'
 
