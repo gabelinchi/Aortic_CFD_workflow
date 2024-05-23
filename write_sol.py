@@ -5,9 +5,9 @@ import os.path as osp
 
 
 
-def get_bl_nodes(mesh, dist, dlow, dhigh, dir, plot=False):
+def get_bl_nodes(mesh, surf, dist, dlow, dhigh, dir, plot=False):
     print('start tagging')
-    surf = mesh.extract_surface()
+
     closest_points = surf.find_closest_cell(mesh.points, return_closest_point=True)[1]
     d_exact = np.linalg.norm(mesh.points - closest_points, axis=1)
     density = np.where(d_exact > dist, dlow, dhigh)

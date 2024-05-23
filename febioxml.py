@@ -30,7 +30,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     zerofluidvelocity_z = True
 
     #Loads
-    velocity = -2                          #negative want moet aorta in, normals staan mesh uit (naar buiten)
+    velocity = -1                          #negative want moet aorta in, normals staan mesh uit (naar buiten)
     prescribe_nodal_velocities = True
     parabolic = True
     prescribe_rim_pressure= True
@@ -89,7 +89,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
 
     #make nodes and elements arrays from mesh.vtk
     polydata = tetmesh 
-    Meshnodes = polydata.points
+    Meshnodes = polydata.points * 0.001
     ZeroElem = polydata.cells.reshape(-1,5)[:,[1,2,3,4]]
     MeshElem = []
     for num in ZeroElem:
