@@ -30,15 +30,15 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     zerofluidvelocity_z = True
 
     #Loads
-    velocity = -1                          #negative want moet aorta in, normals staan mesh uit (naar buiten)
+    velocity = -2                          #negative want moet aorta in, normals staan mesh uit (naar buiten)
     prescribe_nodal_velocities = True
     parabolic = True
     prescribe_rim_pressure= True
 
     #SimulationControl
     analysis = 'DYNAMIC'
-    time_steps = 600                         #initial time steps, changes towards dtmax     
-    step_size = 0.001                        #seconds
+    time_steps = 200                         #initial time steps, changes towards dtmax     
+    step_size = 0.1                        #seconds
     plot_zero_state = 0
     plot_range = 0,-1
     plot_level = 'PLOT_MAJOR_ITRS'
@@ -212,9 +212,9 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
         element = ET.Element(element_name)
         element.text = ','.join(map(str, array))   #add array as a string
         element.set('id', str(i+1))                #set element id (python counts from 0, FEBio from 1)
-    if i > 0:
-         BC2_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
-    BC2_list.append(element)
+        if i > 0:
+            BC2_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
+        BC2_list.append(element)
 
     # Append XML elements to the 'Mesh/Surface' element
     Element = root.find('.//Mesh/Surface[@name = "ZeroFluidDilatation1"]')
