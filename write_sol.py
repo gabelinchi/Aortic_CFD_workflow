@@ -1,7 +1,7 @@
 import pyvista as pv
 import numpy as np
 
-def write_sol(mesh, surf, dist, dlow, dhigh, dir, plot=False):
+def write_sol(mesh, surf, parameters, dir, plot=False):
     '''
     Function that creates a .sol file for a mesh. This file can be used by mmg to specify local mesh density
     paremeter. Outputs the input mesh with an added array 'sol' containing the data written to the .sol file
@@ -14,6 +14,11 @@ def write_sol(mesh, surf, dist, dlow, dhigh, dir, plot=False):
     plot    : show plots
     '''
     print('start tagging')
+
+    # Unpack parameters
+    dist = parameters['bl_thickness']
+    dlow = parameters['edgelength']
+    dhigh = parameters['bl_edgelength']
 
     # Get closest point to wall for each point in mesh & calculate distance
     closest_points = surf.find_closest_cell(mesh.points, return_closest_point=True)[1]

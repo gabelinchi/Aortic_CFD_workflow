@@ -61,6 +61,11 @@ mmg3d_parameters = {
     'hausd': '0.1',
     'detection angle': '35'}
 
+mmg3d_sol_parameters = {
+    'bl_thickness': 1,
+    'bl_edgelength': 1,
+    'edgelength': 15}
+
 tetgen_parameters = dict(
     order=1, 
     mindihedral=20, 
@@ -81,7 +86,7 @@ intp_options = {
 
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = False
+show_plot = True
 
 
 print('Setup and import done')
@@ -126,7 +131,7 @@ combined_remeshed = combined_remeshed
 tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, plot=show_plot)
 
 #Create a .sol file for mmg3d
-write_sol(tetmesh, wall_cut, 1, 15, 1, osp.join(temp_dir, r'initial_volume_mesh.sol'), plot=show_plot)
+write_sol(tetmesh, wall_cut, mmg3d_sol_parameters, osp.join(temp_dir, r'initial_volume_mesh.sol'), plot=show_plot)
 
 #Save initial mesh
 tetmesh.point_data.clear()
@@ -134,7 +139,8 @@ tetmesh.cell_data.clear()
 pv.save_meshio(osp.join(temp_dir, r'initial_volume_mesh.mesh'), tetmesh)
 
 #Refine 3D mesh with mmg3d
-tetmesh = volume_remesh_mmg.mmg3d(osp.join(temp_dir, r'initial_volume_mesh.mesh'), osp.join(temp_dir, r'mmg3d_mesh.mesh'), temp_dir, mmg3d_parameters, plot=show_plot)
+tetmesh = volume_remesh_mmg.mmg3d(osp.join(temp_dir, r'initial_volume_mesh.mesh'), osp.join(temp_dir, r'mmg3d_mesh.mesh'),
+                                  temp_dir, mmg3d_parameters, plot=show_plot)
 
 # Calculate mesh stats and quality
 jac = tetmesh.compute_cell_quality(quality_measure='scaled_jacobian')['CellQuality']
