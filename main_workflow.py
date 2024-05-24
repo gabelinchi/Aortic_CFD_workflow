@@ -158,10 +158,10 @@ print('avg:', aspect.mean())
 print('--------------------------------------------------------------')
 
 #Plot bad cells
-if show_plot:
+if show_plot ==False:
     plt = pv.Plotter()
     plt.add_mesh(tetmesh, style='wireframe')
-    plt.add_mesh(tetmesh.extract_cells(jac<0.3), color='red', show_edges=True)
+    plt.add_mesh(tetmesh.extract_cells(jac<0.1), color='red', show_edges=True)
     plt.add_text('Bad cells')
     plt.show()
 
