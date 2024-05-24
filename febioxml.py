@@ -9,7 +9,7 @@ import tetgen as tet
 import xml.etree.ElementTree as ET
 import subprocess
 
-def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
+def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_dir, temp_dir):
     #constants:
     T = 4
     P = 0
@@ -247,7 +247,26 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
         print("Element load not found.") 
     print('added nodes')
 
-    
+
+    # Add velocity profile to the file as XML elements
+    profile_list = []
+    for i, array in enumerate(velocity_profile):
+        element_name = "face"
+        element = ET.Element(element_name)
+        element.text = ','.join(map(str, array))   #add array as a string
+        element.set('lid', str(i+1))                #set element id (python counts from 0, FEBio from 1)
+        if i > 0:
+            profile_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
+        profile_list.append(element)
+    # Append XML elements to the 'Mesh/Surface' element
+    Element = root.find('.//MeshData/SurfaceData[@name = "velocityprofile"]')
+    if Element is not None:
+        for vel in profile_list:
+            Element.append(vel)                   #add the nodes to the element <Elements>
+        profile_list[-1].tail = '\n\t\t'              #get the closing </Elements> in the right tree
+    else:
+        print("Element SurfaceData[@name = 'velocityprofile'] not found.") 
+    print('added velocity profile')
 
 
 

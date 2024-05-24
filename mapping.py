@@ -52,7 +52,6 @@ def vel_mapping(source_profile_dir, target_plane, outputDir, intp_options, plot=
     leftmost_idx_on_target = min(range(len(target_pts[: ,0])), key = target_pts[: ,1].__getitem__) # index of the leftmost point (most negative in y direction) in the target plane w.r.t the subject
     target_com = target_pts.mean(0)
     
-    print(target_pts)
 
     #Calculate the normals and flip if necessary (flip_normals is defined in the function as it is a veriable crucial for correct operation)
     target_normal = target_plane.compute_normals()['Normals'].mean(0)

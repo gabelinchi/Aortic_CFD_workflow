@@ -86,6 +86,10 @@
 	<MeshDomains>
 		<SolidDomain name="Part1" mat="Material1" />
 	</MeshDomains>
+	<MeshData>
+		<SurfaceData name="velocityprofile" data_type="vec3" surface="ZeroFluidDilatation1">
+		</SurfaceData>
+	</MeshData>
 	<Boundary>
 		<bc name="ZeroFluidDilatation1" node_set="@surface:ZeroFluidDilatation1" type="zero fluid dilatation" />
 		<bc name="ZeroFluidVelocity1" node_set="@surface:ZeroFluidVelocity1" type="zero fluid velocity">
