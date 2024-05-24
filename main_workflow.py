@@ -217,7 +217,7 @@ if show_plot:
 #Perform the mapping of the velocity profiles on the inlet
 #Output is a point cloud on every inlet node with the respective velocity data and the amount of mapped velocity profiles
 
-velocity_map, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir, intp_options, show_plot)
+velocity_mapped, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir, intp_options, show_plot)
 
 #----------------------------------------------------------------------------------------------------------------------------
 # FEBio
