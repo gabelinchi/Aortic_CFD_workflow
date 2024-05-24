@@ -21,7 +21,7 @@ import mapping
 import xml.etree.ElementTree as ET
 import subprocess
 import febioxml as feb
-import write_sol
+from write_sol import write_sol
 #----------------------------------------------------------------------------------------------------------------------------
 # Setup
 #----------------------------------------------------------------------------------------------------------------------------
@@ -126,7 +126,7 @@ combined_remeshed = combined_remeshed
 tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, plot=show_plot)
 
 #Create a .sol file for mmg3d
-write_sol.get_bl_nodes(tetmesh, wall_cut, 1, 15, 1, osp.join(temp_dir, r'initial_volume_mesh.sol'), plot=show_plot)
+write_sol(tetmesh, wall_cut, 1, 15, 1, osp.join(temp_dir, r'initial_volume_mesh.sol'), plot=show_plot)
 
 #Save initial mesh
 tetmesh.point_data.clear()
