@@ -208,6 +208,29 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
             loader_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
         loader_list.append(element)
 
+    def loadcurve (time_steps, step_size, t_start, t_end):                           #create loadcurve
+        loadcurve_list = []
+        for i in range(time_steps):
+            t = i *step_size
+            if t < t_start:
+                f = 0
+            if t_start <= t < t_end:
+                f = 1
+            if t>= t_end:
+                f = 0
+            loadcurve_list.append([t, f])
+
+        loader_list = []
+        for i, array in enumerate(loadcurve_list):
+            element_name = "pt"
+            element = ET.Element(element_name)
+            element.text = ','.join(map(str, array))   #add array as a string
+            if i > 0:
+                loader_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
+            loader_list.append(element)
+
+    loadcurve
+
     # Append XML elements to the 'Mesh/Surface' element
     Element = root.find('.//LoadData/load_controller/points')
     if Element is not None:
@@ -424,6 +447,6 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     viscous.set('type',str(viscoustype))
     """
     #create FEBio file
-    tree.write(osp.join(temp_dir, r'bouwwerk.feb'), encoding='ISO-8859-1', xml_declaration=True,)
+    tree.write(osp.join(temp_dir, r'simulation.feb'), encoding='ISO-8859-1', xml_declaration=True,)
 
     return
