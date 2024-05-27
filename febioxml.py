@@ -10,12 +10,6 @@ import xml.etree.ElementTree as ET
 import subprocess
 
 def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
-    #constants:
-    T = 4
-    P = 0
-    R = 8.31446
-    Fc = 96485.3
-
     #fluidconstants
     materialtype = 'fluid'
     density = 1000
@@ -195,42 +189,39 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     else:
         print("Element 'Mesh/Elements' not found.") 
 
-    print('loadcurve')
     
+    #amplification factor of the load as loadcurve
     def loadcurve(velocityprofile, time_steps, step_size, root, t_start, t_end):
         loadcurve_list = []
         for i in range(time_steps):
-            t = i * step_size
-            if t < t_start:
+            t = i * step_size                                       #timepoint at each step
+            if t < t_start:                                         #amplification factor = 0 for time before t start
                 f = 0
-            elif t_start <= t < t_end:
+            elif t_start <= t < t_end:                              #amplification factor = 1 for time between t start and t end
                 f = 1
-            else:
+            else:                                                   #amplification factor = 0 for time after t end
                 f = 0
-            loadcurve_list.append([t, f])
+            loadcurve_list.append([t, f])                           #add function f(t) as points
 
         surface_load = f'surface_load[@name="{velocityprofile}"]'
         profile = root.find(f'.//Loads/{surface_load}/velocity')
         if profile is not None:
-            profile.set('lc', '1')
+            profile.set('lc', '1')                                  #loadcontroller id to link it to load
     
-        # Find the <points> element under <load_controller>
             load_controller = root.find('.//LoadData/load_controller[@type="loadcurve"]')
             points_element = load_controller.find('points')
 
-        # Create XML elements for each point in the load curve
-            for array in loadcurve_list:
+            for array in loadcurve_list:                     # Create XML elements for each point in the load curve:
                 element_name = "pt"
-                element = ET.Element(element_name)
+                element = ET.Element(element_name)              #make the string an .xml element
                 t, f = array
                 element.text = str(t) + ',' + str(f)
                 element.tail= '\n\t\t\t\t'
-        
-                # Append the newly created element to the <points> element
-                points_element.append(element)
+                points_element.append(element)                  #add points to the xml
         else:
             print("Profile not found")
-    loadcurve("FluidNormalVelocity1", time_steps, step_size,root, 1, 1.5)
+    #one loadcurve for each velocityprofile snapshot:
+    loadcurve("FluidNormalVelocity1", time_steps, step_size,root, 0, 1.2)
 
     print('finished loadcontroller')
 
@@ -425,11 +416,18 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     Parent2('Loads', 'surface_load', 'prescribe_nodal_velocities', str(int(prescribe_nodal_velocities)))
     Parent2('Loads', 'surface_load', 'parabolic', str(int(parabolic)))
     Parent2('Loads', 'surface_load', 'parabolic', str(int(prescribe_rim_pressure)))
+    
+    Parent2('LoadData', 'load_controller', 'interpolate', str(interpolate))
+    Parent2('LoadData', 'load_controller', 'extend', str(extend))
 
     #triple parent
     Parent3('Material', 'material', 'viscous', 'kappa', str(kappa))
     Parent3('Material', 'material', 'viscous', 'mu', str(mu))
-    Parent2('LoadData', 'load_controller', 'interpolate', str(interpolate))
+    Parent3('Control', 'Solver', 'qn_method', 'max_ups', str(max_ups))
+    Parent3('Control', 'Solver', 'qn_method', 'max_buffer_size', str(max_buffer_size))
+    Parent3('Control', 'Solver', 'qn_method', 'cycle_buffer', str(cycle_buffer))
+    Parent3('Control', 'Solver', 'qn_method', 'cmax', str(cmax))
+
 
     timestepper  = root.find('./Control/time_stepper')      #dit moet nog onder step/step1
     timestepper.set('type',str(time_stepper_type))
