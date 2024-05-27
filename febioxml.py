@@ -38,7 +38,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     #SimulationControl
     analysis = 'DYNAMIC'
     time_steps = 200                         #initial time steps, changes towards dtmax     
-    step_size = 0.01                        #seconds
+    step_size = 0.005                        #seconds
     plot_zero_state = 0
     plot_range = 0,-1
     plot_level = 'PLOT_MAJOR_ITRS'
@@ -47,10 +47,10 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     output_stride = 1
     adaptor_re_solve = 1
     time_stepper_type="default"
-    max_retries = 20
-    opt_iter = 50
+    max_retries = 10
+    opt_iter = 25
     dtmin = 0
-    dtmax = 0.1                           #max timestepsize
+    dtmax = 0.05                           #max timestepsize
     aggressiveness = 0
     cutback = 0.5
     dtforce = 0 

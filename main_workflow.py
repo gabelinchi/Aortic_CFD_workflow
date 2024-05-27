@@ -53,7 +53,7 @@ outlet = pv.read(outlet_path)
 #Meshing parameters
 mmg_parameters = {
     'mesh_density': '0.1', #hausdorf parameter of mmg, defines amount of added detail at curvature
-    'sizing': '1', #forces similarly sized poly's, legacy option, can possibly be dropped
+    'sizing': '1', #forces similarly sized poly's, legacy option (used for stitching), can possibly be dropped
     'detection angle': '35'}
 
 mmg3d_parameters = {
@@ -61,7 +61,7 @@ mmg3d_parameters = {
     'detection angle': '35'}
 
 mmg3d_sol_parameters = {
-    'bl_thickness': 1,
+    'bl_thickness': 1.2,
     'bl_edgelength': 1,
     'edgelength': 15}
 
@@ -69,7 +69,9 @@ tetgen_parameters = dict(
     order=1, 
     mindihedral=20, 
     minratio=1.5,
-    nobisect=True)
+    nobisect=True,
+    fixedvolume=True,
+    maxvolume=1)
 
 #Run qualifications (code will terminate if not met)
 max_elements = 1000000
@@ -234,7 +236,8 @@ velocity_map, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir
 feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir)
 
 #Run FEBio
-FEBio_path = r"C:/Program Files/bin/febio4.exe"
+#FEBio_path = r"C:/Program Files/bin/febio4.exe" #Path voor Yarran
+FEBio_path = r"C:/Program Files/bin/febio4.exe" #Path voor normale mensen
 #Use the current
 FEBio_inputfile = osp.join(temp_dir, r'simulation.feb')
 subprocess.run([FEBio_path, FEBio_inputfile], check = True)
