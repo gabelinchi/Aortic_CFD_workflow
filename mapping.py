@@ -48,7 +48,9 @@ def vel_mapping(source_profile_dir, target_plane, outputDir, intp_options, plot=
 
     #Calculate the target cell_centers and COM. Extract the index of the points that is most negative on the y-plane
     target_plane = target_plane.extract_surface()
+    print(target_plane)
     target_pts = target_plane.cell_centers(vertex = False).points
+    print(len(target_pts))
     leftmost_idx_on_target = min(range(len(target_pts[: ,0])), key = target_pts[: ,1].__getitem__) # index of the leftmost point (most negative in y direction) in the target plane w.r.t the subject
     target_com = target_pts.mean(0)
     

@@ -87,7 +87,7 @@
 		<SolidDomain name="Part1" mat="Material1" />
 	</MeshDomains>
 	<MeshData>
-		<SurfaceData name="velocityprofile" data_type="vec3" surface="ZeroFluidDilatation1">
+		<SurfaceData name="velocityprofile" data_type="vec3" surface="FluidNormalVelocity1">
 		</SurfaceData>
 	</MeshData>
 	<Boundary>
@@ -99,7 +99,7 @@
 		</bc>
 	</Boundary>
 	<Loads>
-		<surface_load name="FluidNormalVelocity1" surface="FluidNormalVelocity1" type="fluid normal velocity">
+		<surface_load name="FluidVelocity1" surface="FluidNormalVelocity1" type="fluid velocity">
 			<velocity>0.2</velocity>
 			<prescribe_nodal_velocities>1</prescribe_nodal_velocities>
 			<parabolic>1</parabolic>

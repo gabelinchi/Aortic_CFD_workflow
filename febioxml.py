@@ -240,8 +240,8 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     # Append XML elements to the 'Mesh/Surface' element
     Element = root.find('.//Mesh/Surface[@name = "FluidNormalVelocity1"]')
     if Element is not None:
-        for tri3 in load_list:
-            Element.append(tri3)                   #add the nodes to the element <Elements>
+        for face in load_list:
+            Element.append(face)                   #add the nodes to the element <Elements>
         load_list[-1].tail = '\n\t\t'              #get the closing </Elements> in the right tree
     else:
         print("Element load not found.") 
@@ -258,17 +258,25 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
         if i > 0:
             profile_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
         profile_list.append(element)
-    # Append XML elements to the 'Mesh/Surface' element
+    # Append XML elements to the 'MeshData/SurfaceData' element
     Element = root.find('.//MeshData/SurfaceData[@name = "velocityprofile"]')
     if Element is not None:
         for vel in profile_list:
             Element.append(vel)                   #add the nodes to the element <Elements>
-        profile_list[-1].tail = '\n\t\t'              #get the closing </Elements> in the right tree
+        #profile_list[-1].tail = '\n\t\t'              #get the closing </Elements> in the right tree
     else:
-        print("Element SurfaceData[@name = 'velocityprofile'] not found.") 
-    print('added velocity profile')
+        print("Element SurfaceData[@name = 'velocityprofile'] not found.")
+    
 
-
+    """ surface_data = root.find('.//MeshData/SurfaceData[@name = "velocityprofile"]')
+    count = 1
+    for velocity in velocity_profile:
+        new_item = ET.SubElement(surface_data, 'face')
+        surface_data.append(new_item)
+        #new_item.attrib['lid'] = str(i + 1)
+        #new_item.text = ','.join(map(str, array))
+        #surface_data.append(new_item) 
+    print('added velocity profile') """
 
     #Edit constants
     def Parent1(parent, variable, value):

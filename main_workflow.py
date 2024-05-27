@@ -219,7 +219,7 @@ if show_plot:
 
 velocity_mapped, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir, intp_options, show_plot)
 single_profile = velocity_mapped[5]
-print(single_profile)
+print(len(single_profile))
 #----------------------------------------------------------------------------------------------------------------------------
 # FEBio
 #----------------------------------------------------------------------------------------------------------------------------
