@@ -234,7 +234,8 @@ velocity_map, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir
 feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir)
 
 #Run FEBio
-FEBio_path = r"C:/Program Files/bin/febio4.exe"
+#FEBio_path = r"C:/Program Files/bin/febio4.exe" #voor yarran want die is speciaal
+FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe" #voor de normale nederlander met italiaanse achtergrond
 #Use the current
 FEBio_inputfile = osp.join(temp_dir, r'simulation.feb')
 subprocess.run([FEBio_path, FEBio_inputfile], check = True)
