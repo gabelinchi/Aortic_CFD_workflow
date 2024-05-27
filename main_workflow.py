@@ -226,20 +226,20 @@ if show_plot:
 #Perform the mapping of the velocity profiles on the inlet
 #Output is a point cloud on every inlet node with the respective velocity data and the amount of mapped velocity profiles
 
-velocity_map, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir, intp_options, show_plot)
-
+velocity_mapped, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir, intp_options, show_plot)
+single_profile = velocity_mapped[5]
 #----------------------------------------------------------------------------------------------------------------------------
 # FEBio
 #----------------------------------------------------------------------------------------------------------------------------
 
 #Create a solver compatible file based on the 3D-mesh and meshing parameters
-feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir)
+feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_mapped[5], file_dir, output_dir)
 
 #Run FEBio
 #FEBio_path = r"C:/Program Files/bin/febio4.exe" #Path voor Yarran
 FEBio_path = r"C:/Program Files/bin/febio4.exe" #Path voor normale mensen
 #Use the current
-FEBio_inputfile = osp.join(temp_dir, r'simulation.feb')
+FEBio_inputfile = osp.join(output_dir, r'simulation.feb')
 subprocess.run([FEBio_path, FEBio_inputfile], check = True)
 
 
