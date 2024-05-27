@@ -1,13 +1,0 @@
-ply
-format binary_little_endian 1.0
-comment VTK generated PLY File
-obj_info vtkPolyData points and polygons: vtk4.0
-element vertex 41
-property float x
-property float y
-property float z
-element face 0
-property list uchar int vertex_indices
-end_header
-ˆ…AôÃAiw@I‘A:’(ABÏ¨@gÄ…A}® A @‘þ’A	Š8A+‡Ñ@¡gzAŒ(A¥?ïÉ[A•åÆAˆcKAKYGA¡ÖÊAÆm3AºÚoAw­½A(XA¾€AÍ;±AF¶XA?Æ…A>ù£A}®OAó6A­iËAe¶A&S‰AM•—AÙAA€ñË@œ3xA#ÊÁënó@áaAU‡öÀ6v¯@ã¥‰Aß‰ûÀÁÅ¢@ô–AVÔÙÀD—A/QA(,ÒÀiR¡@›U¢AvT®ÀÃÓ#AÈHA¨o¥ÀH3 @0;¬AVHˆÀ_ŒAÕgŒAHá4Aé4AòA@A‰Àˆô“AÍÌHAµ7ø@•'AOÍA%uAÁÊSAÝ$-A>®À:#aA#J+A›t¿Y†DAë5A¬GÀ?Æ
-A~ÔA0*Ï@)³ý@ôìÓAä1©@GAFÑAƒ†ï@îëš@­úµAƒ£RÀÔ+AÞ‚AþÔ*A¥”AœYA¢(AGƒ“Aq=mA>\AÂlAž^,A<P>IK—@úm¿AàóÀ{1›@ÕgÇA€H‹¿W•§@Å ÍA ‰p>À•»@_)ÐAÅ¬Ë?ùÓ@¢EÑA{8@*é@ïIÒAÉ“‚@

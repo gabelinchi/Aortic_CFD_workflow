@@ -37,8 +37,8 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
 
     #SimulationControl
     analysis = 'DYNAMIC'
-    time_steps = 600                         #initial time steps, changes towards dtmax     
-    step_size = 0.001                        #seconds
+    time_steps = 200                         #initial time steps, changes towards dtmax     
+    step_size = 0.01                        #seconds
     plot_zero_state = 0
     plot_range = 0,-1
     plot_level = 'PLOT_MAJOR_ITRS'
@@ -47,7 +47,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     output_stride = 1
     adaptor_re_solve = 1
     time_stepper_type="default"
-    max_retries = 25
+    max_retries = 20
     opt_iter = 50
     dtmin = 0
     dtmax = 0.1                           #max timestepsize
@@ -89,7 +89,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
 
     #make nodes and elements arrays from mesh.vtk
     polydata = tetmesh 
-    Meshnodes = polydata.points
+    Meshnodes = polydata.points * 0.001
     ZeroElem = polydata.cells.reshape(-1,5)[:,[1,2,3,4]]
     MeshElem = []
     for num in ZeroElem:
@@ -212,9 +212,9 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
         element = ET.Element(element_name)
         element.text = ','.join(map(str, array))   #add array as a string
         element.set('id', str(i+1))                #set element id (python counts from 0, FEBio from 1)
-    if i > 0:
-         BC2_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
-    BC2_list.append(element)
+        if i > 0:
+            BC2_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
+        BC2_list.append(element)
 
     # Append XML elements to the 'Mesh/Surface' element
     Element = root.find('.//Mesh/Surface[@name = "ZeroFluidDilatation1"]')
