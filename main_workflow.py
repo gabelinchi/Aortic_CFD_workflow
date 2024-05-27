@@ -219,18 +219,17 @@ if show_plot:
 
 velocity_mapped, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir, intp_options, show_plot)
 single_profile = velocity_mapped[5]
-print(len(single_profile))
 #----------------------------------------------------------------------------------------------------------------------------
 # FEBio
 #----------------------------------------------------------------------------------------------------------------------------
 
 #Create a solver compatible file based on the 3D-mesh and meshing parameters
-feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_mapped[5], file_dir, temp_dir)
+feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_mapped[5], file_dir, output_dir)
 
 #Run FEBio
-FEBio_path = r"C:/Program Files/bin/febio4.exe"
+FEBio_path = r"C:\Program Files\FEBioStudio2\bin\febio4.exe"
 #Use the current
-FEBio_inputfile = osp.join(temp_dir, r'simulation.feb')
+FEBio_inputfile = osp.join(output_dir, r'simulation.feb')
 subprocess.run([FEBio_path, FEBio_inputfile], check = True)
 
 

@@ -25,5 +25,5 @@ from write_sol import write_sol
 #Run FEBio
 FEBio_path = r"C:\Program Files\FEBioStudio2\bin\febio4.exe"
 #Use the current
-FEBio_inputfile = osp.join(r'C:\Users\lmorr\Documents\TU\23-24\BEP\Git_repository\Aortic_CFD_workflow-3\temp', r'simulation.feb')
+FEBio_inputfile = osp.join(r'C:\Users\lmorr\Documents\TU\23-24\BEP\Git_repository\Aortic_CFD_workflow-3\output', r'simulation.feb')
 subprocess.run([FEBio_path, FEBio_inputfile], check = True)

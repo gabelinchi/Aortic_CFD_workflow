@@ -9,7 +9,7 @@ import tetgen as tet
 import xml.etree.ElementTree as ET
 import subprocess
 
-def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_dir, temp_dir):
+def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_dir, output_dir):
     #constants:
     T = 4
     P = 0
@@ -254,7 +254,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
         element_name = "face"
         element = ET.Element(element_name)
         element.text = ','.join(map(str, array))   #add array as a string
-        element.set('lid', str(i+1))                #set element id (python counts from 0, FEBio from 1)
+        element.set('lid', str(i+1))                #set element id (python counts from 0, FEBio from 1)    
         if i > 0:
             profile_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
         profile_list.append(element)
@@ -263,20 +263,11 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     if Element is not None:
         for vel in profile_list:
             Element.append(vel)                   #add the nodes to the element <Elements>
-        #profile_list[-1].tail = '\n\t\t'              #get the closing </Elements> in the right tree
+        profile_list[-1].tail = '\n\t\t'              #get the closing </Elements> in the right tree
     else:
         print("Element SurfaceData[@name = 'velocityprofile'] not found.")
     
-
-    """ surface_data = root.find('.//MeshData/SurfaceData[@name = "velocityprofile"]')
-    count = 1
-    for velocity in velocity_profile:
-        new_item = ET.SubElement(surface_data, 'face')
-        surface_data.append(new_item)
-        #new_item.attrib['lid'] = str(i + 1)
-        #new_item.text = ','.join(map(str, array))
-        #surface_data.append(new_item) 
-    print('added velocity profile') """
+    print('added velocity profile')
 
     #Edit constants
     def Parent1(parent, variable, value):
@@ -398,10 +389,10 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     Parent2('Boundary', 'bc', 'wy_dof', str(int(zerofluidvelocity_y)))
     Parent2('Boundary', 'bc', 'wz_dof', str(int(zerofluidvelocity_z)))
 
-    Parent2('Loads', 'surface_load', 'velocity', str(velocity))
-    Parent2('Loads', 'surface_load', 'prescribe_nodal_velocities', str(int(prescribe_nodal_velocities)))
-    Parent2('Loads', 'surface_load', 'parabolic', str(int(parabolic)))
-    Parent2('Loads', 'surface_load', 'parabolic', str(int(prescribe_rim_pressure)))
+    #Parent2('Loads', 'surface_load', 'velocity', str(velocity))
+    #Parent2('Loads', 'surface_load', 'prescribe_nodal_velocities', str(int(prescribe_nodal_velocities)))
+    #Parent2('Loads', 'surface_load', 'parabolic', str(int(parabolic)))
+    #Parent2('Loads', 'surface_load', 'parabolic', str(int(prescribe_rim_pressure)))
 
     #triple parent
     Parent3('Material', 'material', 'viscous', 'kappa', str(kappa))
@@ -419,6 +410,6 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     viscous.set('type',str(viscoustype))
     """
     #create FEBio file
-    tree.write(osp.join(temp_dir, r'simulation.feb'), encoding='ISO-8859-1', xml_declaration=True,)
+    tree.write(osp.join(output_dir, r'simulation.feb'), encoding='ISO-8859-1', xml_declaration=True,)
 
     return

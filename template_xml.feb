@@ -99,11 +99,8 @@
 		</bc>
 	</Boundary>
 	<Loads>
-		<surface_load name="FluidVelocity1" surface="FluidNormalVelocity1" type="fluid velocity">
-			<velocity>0.2</velocity>
-			<prescribe_nodal_velocities>1</prescribe_nodal_velocities>
-			<parabolic>1</parabolic>
-			<prescribe_rim_pressure>1</prescribe_rim_pressure>
+		<surface_load surface="FluidNormalVelocity1" type="fluid velocity">
+			<velocity type="map">velocityprofile</velocity>
 		</surface_load>
 	</Loads>
 	<Output>
