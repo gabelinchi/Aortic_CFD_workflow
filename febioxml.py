@@ -89,7 +89,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
 
     #make nodes and elements arrays from mesh.vtk
     polydata = tetmesh 
-    Meshnodes = polydata.points * 0.001
+    Meshnodes = polydata.points * 0.001                         #convert to meters
     ZeroElem = polydata.cells.reshape(-1,5)[:,[1,2,3,4]]
     MeshElem = []
     for num in ZeroElem:
@@ -104,7 +104,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     WallNodes = WallNodes + 1
 
     #get XML file
-    tree = ET.parse(osp.join(file_dir, r'template_xml.feb'))
+    tree = ET.parse(osp.join(file_dir, r'fundering met loadcontroller.feb'))
     root = tree.getroot()
 
     print('emptying .xml')
@@ -128,16 +128,24 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     if Surface is not None:
         for element in Surface.findall('tri3'):
             Surface.remove(element)
-    Surface = root.find("./Mesh/Surface[@name='ZeroFluidVelocity1']")
+    Surface = root.find("./Mesh/Surface[@name='ZeroFluidVelocity2']")
     # If Surface element is found, remove all the tri3 elements under it
     if Surface is not None:
         for element in Surface.findall('tri3'):
             Surface.remove(element)
-    Surface = root.find("./Mesh/Surface[@name='ZeroFluidDilatation3']")
+    Surface = root.find("./Mesh/Surface[@name='ZeroFluidDilatation1']")
     # If Surface element is found, remove all the tri3 elements under it
     if Surface is not None:
         for element in Surface.findall('tri3'):
             Surface.remove(element)
+    loadcontroller = root.find("./LoadData/load_controller/points")
+    # If loadcontroller element is found, remove all the loadpoints under it
+    if loadcontroller is not None:
+        for element in Surface.findall('pt'):
+            loadcontroller.remove(element)
+    else:
+        print('loadcontroller not found')
+    
     print('emptied.xml')
 
 
@@ -184,6 +192,30 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     else:
         print("Element 'Mesh/Elements' not found.") 
 
+    #create loadcurve
+    loadcurve_list = []
+    for i in range(time_steps):
+        t = i *step_size
+        f = np.sin(t)
+        loadcurve_list.append([t, f])
+
+    loader_list = []
+    for i, array in enumerate(loadcurve_list):
+        element_name = "pt"
+        element = ET.Element(element_name)
+        element.text = ','.join(map(str, array))   #add array as a string
+        if i > 0:
+            loader_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
+        loader_list.append(element)
+
+    # Append XML elements to the 'Mesh/Surface' element
+    Element = root.find('.//LoadData/load_controller/points')
+    if Element is not None:
+        for pt in loader_list:
+            Element.append(pt)                   #add the nodes to the element <Elements>
+        loader_list[-1].tail = '\n\t\t'              #get the closing </Elements> in the right tree
+    else:
+        print("loadcontroller not found") 
 
     # Add boundary conditions to the file as XML elements
     BC1_list = []
@@ -247,7 +279,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
         print("Element load not found.") 
     print('added nodes')
 
-    
+     
 
 
 
@@ -392,6 +424,6 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     viscous.set('type',str(viscoustype))
     """
     #create FEBio file
-    tree.write(osp.join(temp_dir, r'simulation.feb'), encoding='ISO-8859-1', xml_declaration=True,)
+    tree.write(osp.join(temp_dir, r'bouwwerk.feb'), encoding='ISO-8859-1', xml_declaration=True,)
 
     return
