@@ -7,7 +7,14 @@ from tkinter import Tk
 from tkinter.filedialog import askopenfilenames
 import cutting
 
-def pp_wss():
+def wss_cut_and_hist(maxrange=50):
+    '''
+    Asks the user to select vtk files to process. For each file, geometry is cut where the artery is horizontal,
+    wss data is added and the result is plotted. Also prints a histogram of wss for each .vtk
+
+    :maxrange   : float, maximum value for the color plot
+    :return     :pyvista MultiBlock with cut geometry
+    '''
     # Read vtk
     vtk_path = askopenfilenames(title='Select VTK file(s)')
     block = pv.MultiBlock()
@@ -54,7 +61,45 @@ def pp_wss():
         print('90:', np.percentile(wss,90))
     
         # Plot result
-        block[i].plot(scalars='wss', clim=[0,50], text=filenames[i])
+        block[i].plot(scalars='wss', clim=[0, maxrange], text=filenames[i])
+    return block
+
+def wss_simple(maxrange=50):
+    '''
+    Asks the user to select vtk files to process. For each file, wss data is added and the result is plotted.
+
+    :maxrange   : float, maximum value for the color plot
+    :return     :pyvista MultiBlock with cut geometry
+    '''
+    # Read vtk
+    vtk_path = askopenfilenames(title='Select VTK file(s)')
+    block = pv.MultiBlock()
+    filenames = []
+    for filepath in vtk_path:
+        vtk = pv.read(filepath).scale([1000,1000,1000])
+        filename = os.path.basename(filepath)
+        filenames.append(filename)
+
+        # Identify surfaces & select largest (wall)
+        split_surf = id.identify_surfaces(vtk, 30)
+        lengths = np.empty(len(split_surf))
+        for i in range(len(lengths)):
+            lengths[i] = split_surf[i].number_of_points
+        wall_index = np.argmax(lengths, axis=0)
+        wall = split_surf[int(wall_index)]
+
+        # Add array containing max. wss
+        tensors = wall['fluid_stress'].reshape((wall['fluid_stress'].shape[0],3,3))
+        eig = np.linalg.eigvals(tensors)
+        min = eig.min(axis=1)
+        max = eig.max(axis=1)
+        wss = (max-min)/2
+        wall['wss']=wss
+        block.append(wall)
+    
+    # Plot results
+    for i in range(len(block)):
+        block[i].plot(scalars='wss', clim=[0,maxrange], text=filenames[i])
     return
 
-pp_wss()
+#wss_simple(50)
