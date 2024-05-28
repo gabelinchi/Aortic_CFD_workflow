@@ -87,7 +87,9 @@
 		<SolidDomain name="Part1" mat="Material1" />
 	</MeshDomains>
 	<MeshData>
-		<SurfaceData name="velocityprofile" data_type="vec3" surface="FluidNormalVelocity1">
+		<SurfaceData name="velocityprofile1" data_type="vec3" surface="FluidNormalVelocity1">
+		</SurfaceData>
+		<SurfaceData name="velocityprofile2" data_type="vec3" surface="FluidNormalVelocity1">
 		</SurfaceData>
 	</MeshData>
 	<Boundary>
@@ -100,9 +102,26 @@
 	</Boundary>
 	<Loads>
 		<surface_load surface="FluidNormalVelocity1" type="fluid velocity">
-			<velocity type="map">velocityprofile</velocity>
+			<velocity type="map" lc="1">velocityprofile1</velocity>
+		</surface_load>
+		<surface_load surface="FluidNormalVelocity1" type="fluid velocity">
+			<velocity type="map" lc="2">velocityprofile2</velocity>
 		</surface_load>
 	</Loads>
+	<LoadData>
+		<load_controller id="1" type="loadcurve">
+			<interpolate>Step</interpolate>
+			<extend>CONSTANT</extend>
+			<points>
+			</points>
+		</load_controller>
+		<load_controller id="2" type="loadcurve">
+			<interpolate>Step</interpolate>
+			<extend>CONSTANT</extend>
+			<points>
+			</points>
+		</load_controller>
+	</LoadData>
 	<Output>
 		<plotfile type="febio">
 			<var type="displacement" />
