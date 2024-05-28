@@ -295,7 +295,16 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
                 profile_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
             profile_list.append(element)
         # Append XML elements to the 'MeshData/SurfaceData' element
+
+        profile_main = root.find('.//MeshData')
+        new_profile = ET.SubElement(profile_main, 'SurfaceData')
         profile_name = "velocityprofile" + str(frame_number)
+        new_profile.set('name', profile_name)
+        new_profile.set('data_type', "vec3")
+        new_profile.set('surface', "FluidNormalVelocity1")
+        new_profile.tail = '\n\t\t'
+
+
         Element = root.find(f'.//MeshData/SurfaceData[@name ="{profile_name}"]')
         if Element is not None:
             for vel in profile_list:
