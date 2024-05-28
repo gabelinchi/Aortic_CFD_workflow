@@ -92,7 +92,7 @@ intp_options = {
 
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = True
+show_plot = False
 
 print('Setup and import done')
 
@@ -236,8 +236,8 @@ single_profile = velocity_mapped[5]
 feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_mapped[5], file_dir, output_dir)
 
 #Run FEBio
-#FEBio_path = r"C:/Program Files/bin/febio4.exe" #Path voor Yarran
-FEBio_path = r"C:/Program Files/bin/febio4.exe" #Path voor normale mensen
+#FEBio_path = r"C:/Program Files/bin/febio4.exe" #voor yarran want die is speciaal
+FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe" #voor de normale nederlander met italiaanse achtergrond
 #Use the current
 FEBio_inputfile = osp.join(output_dir, r'simulation.feb')
 subprocess.run([FEBio_path, FEBio_inputfile], check = True)

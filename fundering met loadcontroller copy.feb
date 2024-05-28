@@ -1,0 +1,127 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<febio_spec version="4.0">
+	<Module type="fluid" />
+	<Control>
+		<analysis>DYNAMIC</analysis>
+		<time_steps>800</time_steps>
+		<step_size>0.001</step_size>
+		<plot_zero_state>0</plot_zero_state>
+		<plot_range>0,-1</plot_range>
+		<plot_level>PLOT_MAJOR_ITRS</plot_level>
+		<output_level>OUTPUT_MAJOR_ITRS</output_level>
+		<plot_stride>1</plot_stride>
+		<output_stride>1</output_stride>
+		<adaptor_re_solve>1</adaptor_re_solve>
+		<time_stepper type="default">
+			<max_retries>10</max_retries>
+			<opt_iter>50</opt_iter>
+			<dtmin>0</dtmin>
+			<dtmax>0.1</dtmax>
+			<aggressiveness>0</aggressiveness>
+			<cutback>0.5</cutback>
+			<dtforce>0</dtforce>
+		</time_stepper>
+		<solver type="fluid">
+			<symmetric_stiffness>non-symmetric</symmetric_stiffness>
+			<equation_scheme>staggered</equation_scheme>
+			<equation_order>default</equation_order>
+			<optimize_bw>0</optimize_bw>
+			<lstol>0.9</lstol>
+			<lsmin>0.01</lsmin>
+			<lsiter>5</lsiter>
+			<max_refs>5</max_refs>
+			<check_zero_diagonal>0</check_zero_diagonal>
+			<zero_diagonal_tol>0</zero_diagonal_tol>
+			<force_partition>0</force_partition>
+			<reform_each_time_step>0</reform_each_time_step>
+			<reform_augment>0</reform_augment>
+			<diverge_reform>0</diverge_reform>
+			<min_residual>1e-20</min_residual>
+			<max_residual>1e+20</max_residual>
+			<vtol>0.001</vtol>
+			<ftol>0.001</ftol>
+			<rhoi>0</rhoi>
+			<etol>0.01</etol>
+			<rtol>0.001</rtol>
+			<predictor>0</predictor>
+			<min_volume_ratio>0</min_volume_ratio>
+			<qn_method type="Broyden">
+				<max_ups>50</max_ups>
+				<max_buffer_size>0</max_buffer_size>
+				<cycle_buffer>1</cycle_buffer>
+				<cmax>100000</cmax>
+			</qn_method>
+		</solver>
+	</Control>
+	<Globals>
+		<Constants>
+			<T>0</T>
+			<P>0</P>
+			<R>8.31446</R>
+			<Fc>96485.3</Fc>
+		</Constants>
+	</Globals>
+	<Material>
+		<material id="1" name="Material1" type="fluid">
+			<density>1060</density>
+			<k>2200000</k>
+			<viscous type="Newtonian fluid">
+				<kappa>0</kappa>
+				<mu>0.056</mu>
+			</viscous>
+		</material>
+	</Material>
+	<Mesh>
+		<Nodes name="case 4">
+			</Nodes>
+		<Elements type="tet4" name="Part1">
+			</Elements>
+		<Surface name="ZeroFluidDilatation1">
+			</Surface>
+		<Surface name="ZeroFluidVelocity1">
+			</Surface>
+		<Surface name="FluidNormalVelocity1">
+			</Surface>
+	</Mesh>
+	<MeshDomains>
+		<SolidDomain name="Part1" mat="Material1" />
+	</MeshDomains>
+	<Boundary>
+		<bc name="ZeroFluidDilatation1" node_set="@surface:ZeroFluidDilatation1" type="zero fluid dilatation" />
+		<bc name="ZeroFluidVelocity1" node_set="@surface:ZeroFluidVelocity1" type="zero fluid velocity">
+			<wx_dof>1</wx_dof>
+			<wy_dof>1</wy_dof>
+			<wz_dof>1</wz_dof>
+		</bc>
+	</Boundary>
+	<Loads>
+		<surface_load name="FluidNormalVelocity1" surface="FluidNormalVelocity1" type="fluid normal velocity">
+			<velocity lc = '1'>0.2</velocity>
+			<prescribe_nodal_velocities>1</prescribe_nodal_velocities>
+			<parabolic>1</parabolic>
+			<prescribe_rim_pressure>1</prescribe_rim_pressure>
+		</surface_load>
+	</Loads>
+	<LoadData>
+		<load_controller id="1" name="LC1" type="loadcurve">
+			<interpolate>LINEAR</interpolate>
+			<extend>CONSTANT</extend>
+			<points>
+			</points>
+		</load_controller>
+	</LoadData>
+	<Output>
+		<plotfile type="febio">
+			<var type="displacement" />
+			<var type="fluid pressure" />
+			<var type="nodal fluid velocity" />
+			<var type="fluid stress" />
+			<var type="fluid velocity" />
+			<var type="fluid acceleration" />
+			<var type="fluid vorticity" />
+			<var type="fluid rate of deformation" />
+			<var type="fluid dilatation" />
+			<var type="fluid volume ratio" />
+		</plotfile>
+	</Output>
+</febio_spec>
