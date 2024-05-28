@@ -20,7 +20,7 @@ def wss_cut_and_hist(maxrange=50):
     block = pv.MultiBlock()
     filenames = []
     for filepath in vtk_path:
-        vtk = pv.read(filepath).scale([1000,1000,1000])
+        vtk = pv.read(filepath).scale([1000,1000,1000]) #Scale the model back to mm
         filename = os.path.basename(filepath)
         filenames.append(filename)
 
@@ -99,7 +99,7 @@ def wss_simple(maxrange=50):
     
     # Plot results
     for i in range(len(block)):
-        block[i].plot(scalars='wss', clim=[0,maxrange], text=filenames[i])
+        block[i].plot(scalars='wss', clim=[0,maxrange], text=filenames[i], scalar_bar_args={'title': 'wss [Pa]'})
     return
 
-#wss_simple(50)
+wss_cut_and_hist(50)
