@@ -16,7 +16,9 @@ def cap(wall, plot=False):
     :returns : (inlet, outlet)
     '''
     print('Start cap generation from cutted wall')
-
+    # Clear data arrays (somehow breaks the function if not done)
+    wall.clear_data()
+    
     # Extract edges to cap
     edges = wall.extract_feature_edges(boundary_edges=True, non_manifold_edges=False, manifold_edges=False, feature_edges=False)
     

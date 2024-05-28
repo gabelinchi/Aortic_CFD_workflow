@@ -61,7 +61,7 @@ mmg3d_parameters = {
     'detection angle': '35'}
 
 mmg3d_sol_parameters = {
-    'bl_thickness': 1.2,
+    'bl_thickness': 1,
     'bl_edgelength': 1,
     'edgelength': 15}
 
@@ -233,7 +233,7 @@ single_profile = velocity_mapped[5]
 #----------------------------------------------------------------------------------------------------------------------------
 
 #Create a solver compatible file based on the 3D-mesh and meshing parameters
-feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_mapped[5], file_dir, output_dir)
+feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, output_dir)
 
 #Run FEBio
 #FEBio_path = r"C:/Program Files/bin/febio4.exe" #Path voor Yarran

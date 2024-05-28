@@ -41,7 +41,7 @@ def cut(point, normal, wall, plot=False):
 
     # Recombine regions
     clipped = reg1.merge(reg2).clean()
-    clipped.clear_data()
+    #clipped.clear_data() #Commented to fix postproc, breaks main
 
     if plot==True:
         clipped.plot()

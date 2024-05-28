@@ -37,8 +37,8 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
 
     #SimulationControl
     analysis = 'DYNAMIC'
-    time_steps = 200                         #initial time steps, changes towards dtmax     
-    step_size = 0.005                        #seconds
+    time_steps = 600                         #initial time steps, changes towards dtmax     
+    step_size = 0.001                        #seconds
     plot_zero_state = 0
     plot_range = 0,-1
     plot_level = 'PLOT_MAJOR_ITRS'
@@ -346,6 +346,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     Parent2('Control', 'time_stepper', 'max_retries', str(max_retries))
     Parent2('Control', 'time_stepper', 'opt_iter', str(opt_iter))
     Parent2('Control', 'time_stepper', 'dtmin', str(dtmin))
+    Parent2('Control', 'time_stepper', 'dtmax', str(dtmax))
     Parent2('Control', 'time_stepper', 'aggressiveness', str(aggressiveness))
     Parent2('Control', 'time_stepper', 'cutback', str(cutback))
     Parent2('Control', 'time_stepper', 'dtforce', str(dtforce))
@@ -424,6 +425,6 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     viscous.set('type',str(viscoustype))
     """
     #create FEBio file
-    tree.write(osp.join(temp_dir, r'simualtion.feb'), encoding='ISO-8859-1', xml_declaration=True,)
+    tree.write(osp.join(temp_dir, r'simulation.feb'), encoding='ISO-8859-1', xml_declaration=True,)
 
     return

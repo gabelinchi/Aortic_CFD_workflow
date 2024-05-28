@@ -35,7 +35,7 @@ def main_cutter(inlet, wall, plot=False):
     print('Cutting done')    
     return new_geometry
 
-def centerline(inlet, wall):
+def centerline(inlet, wall, dist=40, flip_norm=False):
     #From the inlet surface mesh extract the boundary edges
     inlet_boundary = inlet.extract_feature_edges(boundary_edges=True, non_manifold_edges=False, manifold_edges=False, feature_edges=False)
 
@@ -43,6 +43,7 @@ def centerline(inlet, wall):
     inlet_points = inlet_boundary.points
     inlet_centerpoint = inlet_points.mean(0)
     inlet_normal = inlet.compute_normals()['Normals'].mean(0)
+    if flip_norm: inlet_normal=-inlet_normal
 
     #Calculate the area of the inlet edgeprofile
     inlet_area = inlet.area
@@ -96,7 +97,7 @@ def centerline(inlet, wall):
         slice_areas = np.append(slice_areas, new_area)
 
         #Calculate the distance of the new center point and the center point of the inlet, if the distance is larger than a certain threshold. We break the while loop
-        if np.linalg.norm(new_center - inlet_centerpoint) >= 40:
+        if np.linalg.norm(new_center - inlet_centerpoint) >= dist:
             break
 
         #Make the calculation variables the new center point and the new normalised directional vector
@@ -128,3 +129,33 @@ def areaselection(areas):
     smallest_area_index = smallest_index_calc[0]
 
     return smallest_area, smallest_area_index
+
+def post_cutter(inlet, wall, plot=False, flip_norm=False):
+    '''
+    Cuts a vessel at the point where the centerline is horizontal, returns downstream geomtetry.
+    '''
+    print('Start cutting')
+    #Calculates areas along the centerline of the aorta (only first 40 mm). Also outputs nodes/normals and edge profiles for the final cut and visualisation
+    centernodes, centernormals, edgeprofiles, slice_areas = centerline(inlet, wall, dist = 150, flip_norm=flip_norm)
+
+    #Plots the centerline
+    if plot:
+        plt = pv.Plotter()
+        plt.add_mesh(wall, style ='wireframe')
+        plt.add_points(centernodes, color = 'red')
+        plt.show()
+        edgeprofiles.plot()
+
+    #Finds most horizontal part of the centerline
+    horiz_index = np.argmin(np.abs(centernormals @ np.array([0,0,1])))
+    print('Horizontal normal found')
+
+    #Calculates the normal in the final cutting plane centerpoint
+    normal_final = ut.average_normal(centernormals, 2, horiz_index)
+
+    #Final centernode
+    center_final = centernodes[horiz_index].flatten()
+    new_geometry = cwv.cut(center_final, -normal_final, wall, plot=plot)
+
+    print('Cutting done')    
+    return new_geometry
