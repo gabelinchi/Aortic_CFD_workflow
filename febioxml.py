@@ -89,7 +89,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
 
     #loadcontroller
     
-    interpolate = 'Step'                    #can be 'LINEAR' or 'SMOOTH'
+    interpolate = 'LINEAR'                    #can be'STEP',  'LINEAR' or 'SMOOTH'
     extend = "CONSTANT"                     #sws niet nodig, overal gedefineerd
 
     #-------------------------------------------------------------------------------------------------------------------------
