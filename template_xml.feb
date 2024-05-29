@@ -97,26 +97,8 @@
 		</bc>
 	</Boundary>
 	<Loads>
-		<surface_load surface="FluidNormalVelocity1" type="fluid velocity">
-			<velocity type="map" lc="1">velocityprofile1</velocity>
-		</surface_load>
-		<surface_load surface="FluidNormalVelocity1" type="fluid velocity">
-			<velocity type="map" lc="2">velocityprofile2</velocity>
-		</surface_load>
 	</Loads>
 	<LoadData>
-		<load_controller id="1" type="loadcurve">
-			<interpolate>Step</interpolate>
-			<extend>CONSTANT</extend>
-			<points>
-			</points>
-		</load_controller>
-		<load_controller id="2" type="loadcurve">
-			<interpolate>Step</interpolate>
-			<extend>CONSTANT</extend>
-			<points>
-			</points>
-		</load_controller>
 	</LoadData>
 	<Output>
 		<plotfile type="febio">
