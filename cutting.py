@@ -5,7 +5,13 @@ import utils as ut
 
 #main function that runs the cutter script
 def main_cutter(inlet, wall, plot=False):
+    '''
+    Function that is the main for the cutting of the aorta geometry. It calls centerline, areaselection and cutting functions to perform the cut
+    :arg1 inlet: pyvista Polydata
+    :arg2 wall: pyvista PolyData
 
+    returns pyvista PolyData of the wall after the cut
+    '''
     print('Start cutting')
     #Calculates areas along the centerline of the aorta (only first 40 mm). Also outputs nodes/normals and edge profiles for the final cut and visualisation
     centernodes, centernormals, edgeprofiles, slice_areas = centerline(inlet, wall)
@@ -35,6 +41,18 @@ def main_cutter(inlet, wall, plot=False):
     return new_geometry
 
 def centerline(inlet, wall, dist=40, flip_norm=False):
+    '''
+    Function that calculates an approximation of the centerline of the wall geometry
+    :arg1 inlet: pyvista Polydata
+    :arg2 wall: pyvista PolyData
+    :opt arg3: the distance from the inlet at which the function stops calculating
+
+    returns:
+    centernodes: the points of which the centerline is build upon
+    centernormals: the normals in every centernode, perpendicular to the edgeprofiles
+    edgeprofiles: profile from the wall when you cut in the centernode along the centernormal
+    slice_ares: internal area of each edgeprofile (used in areaselection function)
+    '''
     #From the inlet surface mesh extract the boundary edges
     inlet_boundary = inlet.extract_feature_edges(boundary_edges=True, non_manifold_edges=False, manifold_edges=False, feature_edges=False)
 
@@ -110,6 +128,14 @@ def centerline(inlet, wall, dist=40, flip_norm=False):
     return centernodes, centernormals, edgeprofiles, slice_areas
 
 def areaselection(areas):
+    '''
+    Function that selects the minimal area after the aortic root along the centerline
+    :arg1 areas: all areas of the slices along the centerline
+
+    returns
+    smallest area: the minimal area after the aortic root
+    smallest area index: index of smallest area in areas
+    '''
     # Find the indices where the tube transitions from wide to narrow and narrow to wide
     diff_areas = np.diff(areas)
     transition_indices = np.where(np.logical_or(diff_areas < 0, diff_areas == 0))[0]
