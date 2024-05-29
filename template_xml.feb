@@ -87,8 +87,6 @@
 		<SolidDomain name="Part1" mat="Material1" />
 	</MeshDomains>
 	<MeshData>
-		<SurfaceData name="velocityprofile" data_type="vec3" surface="FluidNormalVelocity1">
-		</SurfaceData>
 	</MeshData>
 	<Boundary>
 		<bc name="ZeroFluidDilatation1" node_set="@surface:ZeroFluidDilatation1" type="zero fluid dilatation" />
@@ -99,10 +97,9 @@
 		</bc>
 	</Boundary>
 	<Loads>
-		<surface_load surface="FluidNormalVelocity1" type="fluid velocity">
-			<velocity type="map">velocityprofile</velocity>
-		</surface_load>
 	</Loads>
+	<LoadData>
+	</LoadData>
 	<Output>
 		<plotfile type="febio">
 			<var type="displacement" />

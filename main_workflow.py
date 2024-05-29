@@ -94,6 +94,7 @@ intp_options = {
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
 show_plot = False
+show_plot = False
 
 print('Setup and import done')
 
@@ -228,14 +229,12 @@ if show_plot:
 #Output is a point cloud on every inlet node with the respective velocity data and the amount of mapped velocity profiles
 
 velocity_mapped, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir, intp_options, show_plot)
-single_profile = velocity_mapped[5]
 #----------------------------------------------------------------------------------------------------------------------------
 # FEBio
 #----------------------------------------------------------------------------------------------------------------------------
 
 #Create a solver compatible file based on the 3D-mesh and meshing parameters
-feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, output_dir)
-
+feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_mapped, file_dir, output_dir)
 
 #Run FEBio
 #FEBio_path = r"C:/Program Files/bin/febio4.exe" #Path voor Yarran
