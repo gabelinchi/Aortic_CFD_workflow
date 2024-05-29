@@ -20,7 +20,7 @@ import mapping
 import xml.etree.ElementTree as ET
 import subprocess
 import febioxml as feb
-import qc
+import quality_control
 import shutil
 #----------------------------------------------------------------------------------------------------------------------------
 # Setup
@@ -160,7 +160,7 @@ for i in range(n_geometries):
     combined_remeshed = combined_remeshed.extract_surface().triangulate()
 
     #Report quality
-    qc.meshreport(combined_remeshed, 'Surface mesh quality report')
+    quality_control.meshreport(combined_remeshed, 'Surface mesh quality report')
 
     #Make an initial 3D mesh from the combined mesh using TetGen
     combined_remeshed = combined_remeshed
@@ -168,10 +168,10 @@ for i in range(n_geometries):
 
     #Plot bisection
     if show_plot:
-        qc.clip_plot(tetmesh, 'Initial 3D mesh')
+        quality_control.clip_plot(tetmesh, 'Initial 3D mesh')
 
     #Report quality
-    qc.meshreport(tetmesh, 'Initial 3D mesh quality report')
+    quality_control.meshreport(tetmesh, 'Initial 3D mesh quality report')
 
     #Create a .sol file for mmg3d
     volume_mesh.write_sol(tetmesh, wall_cut, mmg3d_sol_parameters, osp.join(temp_dir, r'initial_volume_mesh.sol'), plot=show_plot)
@@ -186,7 +186,7 @@ for i in range(n_geometries):
                                     temp_dir, mmg3d_parameters, plot=show_plot)
 
     #Report quality
-    report = qc.meshreport(tetmesh, 'Refined 3D mesh quality report')
+    report = quality_control.meshreport(tetmesh, 'Refined 3D mesh quality report')
 
     #Plot bad cells
     jac = report['jac']
@@ -202,7 +202,7 @@ for i in range(n_geometries):
 
     #Plot bisection
     if show_plot:
-        qc.clip_plot(tetmesh, 'Refined 3D mesh')
+        quality_control.clip_plot(tetmesh, 'Refined 3D mesh')
 
     #Save 3D mesh
     tetmesh.save(osp.join(temp_dir, r'3D_output_mesh.vtk'))

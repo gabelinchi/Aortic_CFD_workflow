@@ -1,9 +1,11 @@
-import pyvista as pv
+#import modules
+import sys
+import os.path as osp
+from glob import glob
 import numpy as np
+import pyvista as pv
+import tetgen as tet
 import utils as ut
-
-#wall_path = "geometries\input\wall.stl"
-#wall = pv.read(wall_path)
 
 
 
