@@ -528,7 +528,6 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     material.set('type',str(materialtype))
     viscous  = root.find('./Material/material/viscous')
     viscous.set('type',str(viscoustype))
-    print('test')
 
     #-------------------------------------------------------------------------------------------------------------------------
     # Output
