@@ -12,7 +12,6 @@ import remesh
 import utils as ut
 import cutting
 import volume_mesh
-import volume_remesh_mmg
 from capping import cap
 import identification as id
 from tkinter import Tk
@@ -21,6 +20,7 @@ import mapping
 import xml.etree.ElementTree as ET
 import subprocess
 import febioxml as feb
+import qc
 import shutil
 #----------------------------------------------------------------------------------------------------------------------------
 # Setup
@@ -53,20 +53,34 @@ outlet = pv.read(outlet_path)
 
 #Meshing parameters
 mmg_parameters = {
-    'mesh_density': '0.1',
-    'sizing': '1',
+    'mesh_density': '0.1', #hausdorf parameter of mmg, defines amount of added detail at curvature
+    'sizing': '1', #forces similarly sized poly's, legacy option (used for stitching), can possibly be dropped
     'detection angle': '35'}
 
 mmg3d_parameters = {
     'hausd': '0.1',
-    'max_edgelength': '1',
     'detection angle': '35'}
 
-tetgen_parameters = dict(
-    nobisect=True)
+mmg3d_sol_parameters = {
+    'bl_thickness': 1,
+    'bl_edgelength': 1,
+    'edgelength': 15}
 
-#Angle for identification
-id_angle = 30
+tetgen_parameters = dict(
+    order=1, 
+    mindihedral=20, 
+    minratio=1.5,
+    nobisect=True,
+    fixedvolume=True,
+    maxvolume=1)
+
+#Run qualifications (code will terminate if not met)
+max_elements = 1000000
+min_jacobian = 0.1
+max_aspect   = 5
+
+#Angle for identification of surfaces
+id_angle = 35
 
 #Mapping interpolation options
 intp_options = {
@@ -81,9 +95,7 @@ intp_options = {
 #Plotting boolean, when True: code generates intermediate plots of workflow
 show_plot = False
 
-
 print('Setup and import done')
-
 
 #--------------------------------------------------------------------------------------------------------------------------
 # 3D-meshing algorithm
@@ -119,72 +131,69 @@ combined_remeshed = remesh.remesh_edge_detect(osp.join(temp_dir, r'combined_mesh
 #triangulation step to make sure Tetgen only gets triangles as input
 combined_remeshed = combined_remeshed.extract_surface().triangulate()
 
+#Report quality
+qc.meshreport(combined_remeshed, 'Surface mesh quality report')
+
 #Make an initial 3D mesh from the combined mesh using TetGen
 combined_remeshed = combined_remeshed
-tetmesh = volume_mesh.volume_meshing(combined_remeshed, tetgen_parameters, plot=show_plot)
+tetmesh = volume_mesh.tetgen(combined_remeshed, tetgen_parameters, plot=show_plot)
+
+#Plot bisection
+if show_plot:
+    qc.clip_plot(tetmesh, 'Initial 3D mesh')
+
+#Report quality
+qc.meshreport(tetmesh, 'Initial 3D mesh quality report')
+
+#Create a .sol file for mmg3d
+volume_mesh.write_sol(tetmesh, wall_cut, mmg3d_sol_parameters, osp.join(temp_dir, r'initial_volume_mesh.sol'), plot=show_plot)
 
 #Save initial mesh
+tetmesh.point_data.clear()
+tetmesh.cell_data.clear()
 pv.save_meshio(osp.join(temp_dir, r'initial_volume_mesh.mesh'), tetmesh)
 
 #Refine 3D mesh with mmg3d
-tetmesh = volume_remesh_mmg.mmg3d(osp.join(temp_dir, r'initial_volume_mesh.mesh'), osp.join(temp_dir, r'mmg3d_mesh.mesh'), temp_dir, mmg3d_parameters, plot=show_plot)
+tetmesh = volume_mesh.mmg3d(osp.join(temp_dir, r'initial_volume_mesh.mesh'), osp.join(temp_dir, r'mmg3d_mesh.mesh'),
+                                  temp_dir, mmg3d_parameters, plot=show_plot)
 
-# Calculate mesh stats and quality
-jac = tetmesh.compute_cell_quality(quality_measure='scaled_jacobian')['CellQuality']
-aspect = tetmesh.compute_cell_quality(quality_measure='aspect_ratio')['CellQuality']
-num_points = tetmesh.number_of_points
-num_cells = tetmesh.number_of_cells
-
-# Print report
-print('--------------------------------------------------------------')
-print('3D mesh report:')
-print('num points:', num_points)
-print('num_cells: ', num_cells)
-print('3D mesh quality (mean scaled jacobian)')
-print('min:', jac.min())
-print('max:', jac.max())
-print('avg:', jac.mean())
-print('3D mesh quality (aspect ratio)')
-print('min:', aspect.min())
-print('max:', aspect.max())
-print('avg:', aspect.mean())
-print('--------------------------------------------------------------')
+#Report quality
+report = qc.meshreport(tetmesh, 'Refined 3D mesh quality report')
 
 #Plot bad cells
+jac = report['jac']
 if show_plot:
-    plt = pv.Plotter()
-    plt.add_mesh(tetmesh, style='wireframe')
-    plt.add_mesh(tetmesh.extract_cells(jac<0.3), color='red', show_edges=True)
-    plt.add_text('Bad cells')
-    plt.show()
+    jac = report['jac']
+    if np.any(jac<0.3):
+        plt = pv.Plotter()
+        plt.add_mesh(tetmesh, style='wireframe')
+        plt.add_mesh(tetmesh.extract_cells(jac<0.3), color='red', show_edges=True)
+        plt.add_text('Bad cells')
+        plt.show()
+    else: print('No bad cells')
 
-
-#Plot bisection------------------------------
+#Plot bisection
 if show_plot:
-    # get cell centroids
-
-    cells = tetmesh.cells.reshape(-1, 5)[:, 1:]
-    cell_center = tetmesh.points[cells].mean(1)
-
-    # extract cells below the 0 xy plane
-    mask = cell_center[:, 2] < 0
-    cell_ind = mask.nonzero()[0]
-    subgrid = tetmesh.extract_cells(cell_ind)
-
-    # advanced plotting
-    plotter = pv.Plotter()
-    plotter.add_mesh(subgrid, 'lightgrey', lighting=True, show_edges=True)
-    plotter.add_mesh(combined_remeshed, 'r', 'wireframe')
-    plotter.add_legend([[' Input Mesh ', 'r'], [' Tessellated Mesh ', 'black']])
-    plotter.show()
-#--------------------------------------------
+    qc.clip_plot(tetmesh, 'Refined 3D mesh')
 
 #Save 3D mesh
 tetmesh.save(osp.join(temp_dir, r'3D_output_mesh.vtk'))
 
+#Run qualification
+numcells = report['cells']
+aspect = report['aspect']
+if numcells > max_elements or any(aspect > max_aspect) or any(jac < min_jacobian): run = False
+else: run=True
+
 #Plot 3D_mesh
 if show_plot:
-    tetmesh.plot(show_edges = True)
+    if run:text='Final 3D mesh'
+    else:text='Final 3D mesh - insufficient quality or too many nodes'
+    tetmesh.plot(show_edges = True, text=text)
+
+if run==False:
+    print('Terminating, 3D mesh insufficient quality or too many nodes')
+    exit()
 
 #----------------------------------------------------------------------------------------------------------------------------
 # Identification
@@ -203,7 +212,7 @@ id_outlet = surface_identification[1]
 id_wall = surface_identification[2]
 
 print('Surface identification done')
-#Plot the identifies surfaces for general overview
+#Plot the identified surfaces for general overview
 if show_plot:
     plt = pv.Plotter()
     plt.add_mesh(id_inlet, show_edges = True, color = 'red')
@@ -218,8 +227,8 @@ if show_plot:
 #Perform the mapping of the velocity profiles on the inlet
 #Output is a point cloud on every inlet node with the respective velocity data and the amount of mapped velocity profiles
 
-velocity_map, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir, intp_options, show_plot)
-
+velocity_mapped, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir, intp_options, show_plot)
+single_profile = velocity_mapped[5]
 #----------------------------------------------------------------------------------------------------------------------------
 # FEBio
 #----------------------------------------------------------------------------------------------------------------------------
@@ -228,6 +237,8 @@ velocity_map, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_dir
 #feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, output_dir)
 
 #Run FEBio
+#FEBio_path = r"C:/Program Files/bin/febio4.exe" #Path voor Yarran
+FEBio_path = r"C:/Program Files/bin/febio4.exe" #Path voor normale mensen
 #FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe"
 #Use the current
 #FEBio_inputfile = osp.join(output_dir, r'simulation.feb')

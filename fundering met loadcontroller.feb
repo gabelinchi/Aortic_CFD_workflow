@@ -86,10 +86,6 @@
 	<MeshDomains>
 		<SolidDomain name="Part1" mat="Material1" />
 	</MeshDomains>
-	<MeshData>
-		<SurfaceData name="velocityprofile" data_type="vec3" surface="FluidNormalVelocity1">
-		</SurfaceData>
-	</MeshData>
 	<Boundary>
 		<bc name="ZeroFluidDilatation1" node_set="@surface:ZeroFluidDilatation1" type="zero fluid dilatation" />
 		<bc name="ZeroFluidVelocity1" node_set="@surface:ZeroFluidVelocity1" type="zero fluid velocity">
@@ -99,22 +95,24 @@
 		</bc>
 	</Boundary>
 	<Loads>
-		<surface_load surface="FluidNormalVelocity1" type="fluid velocity">
-			<velocity type="map">velocityprofile</velocity>
+		<surface_load name="FluidNormalVelocity1" surface="FluidNormalVelocity1" type="fluid normal velocity">
+			<velocity>0.2</velocity>
+			<prescribe_nodal_velocities>1</prescribe_nodal_velocities>
+			<parabolic>1</parabolic>
+			<prescribe_rim_pressure>1</prescribe_rim_pressure>
 		</surface_load>
 	</Loads>
+	<LoadData>
+		<load_controller id="1" name="LC1" type="loadcurve">
+			<interpolate>LINEAR</interpolate>
+			<extend>CONSTANT</extend>
+			<points>
+			</points>
+		</load_controller>
+	</LoadData>
 	<Output>
-		<plotfile type="febio">
-			<var type="displacement" />
-			<var type="fluid pressure" />
-			<var type="nodal fluid velocity" />
+		<plotfile type="vtk">
 			<var type="fluid stress" />
-			<var type="fluid velocity" />
-			<var type="fluid acceleration" />
-			<var type="fluid vorticity" />
-			<var type="fluid rate of deformation" />
-			<var type="fluid dilatation" />
-			<var type="fluid volume ratio" />
 		</plotfile>
 	</Output>
 </febio_spec>

@@ -46,11 +46,12 @@ def vel_mapping(source_profile_dir, target_plane, outputDir, intp_options, plot=
     source_pts = [source_profiles[k].points for k in range(num_frames)] 
     source_coms = [source_pts[k].mean(0) for k in range(num_frames)]
 
-    #Calculate the target points and COM. Extract the index of the points that is most negative on the y-plane
+    #Calculate the target cell_centers and COM. Extract the index of the points that is most negative on the y-plane
     target_plane = target_plane.extract_surface()
-    target_pts = target_plane.points
+    target_pts = target_plane.cell_centers(vertex = False).points
     leftmost_idx_on_target = min(range(len(target_pts[: ,0])), key = target_pts[: ,1].__getitem__) # index of the leftmost point (most negative in y direction) in the target plane w.r.t the subject
     target_com = target_pts.mean(0)
+    
 
     #Calculate the normals and flip if necessary (flip_normals is defined in the function as it is a veriable crucial for correct operation)
     target_normal = target_plane.compute_normals()['Normals'].mean(0)
@@ -111,13 +112,14 @@ def vel_mapping(source_profile_dir, target_plane, outputDir, intp_options, plot=
             source_profiles[n].plot()
             if True:
                 plt = pv.Plotter()
-                #plt.add_mesh(pv.read('test_inlet.vtk'), show_edges = True, color = 'black')
+                plt.add_mesh(target_plane, show_edges = True, color = 'black')
                 plt.add_arrows(i.points, 20 * i['Velocity'], color = 'black')
                 plt.add_mesh(i)
                 plt.show()
             n = n + 1
+    
 
-    return interp_planes, num_frames
+    return vel_final, num_frames
 
 #velocity_map, n_maps, source_profiles = vel_mapping(r'C:\Users\lmorr\Documents\TU\23-24\BEP\Velocity_profiles', pv.read('test_inlet.vtk'), r'C:\Users\lmorr\Documents\TU\23-24\BEP\Git_repository\Aortic_CFD_workflow-3', intp_options)
 
