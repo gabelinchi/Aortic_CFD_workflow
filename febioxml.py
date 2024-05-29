@@ -89,8 +89,8 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
 
     #loadcontroller
     
-    interpolate = 'Step'
-    extend = "CONSTANT"
+    interpolate = 'Step'                    #can be 'LINEAR' or 'SMOOTH'
+    extend = "CONSTANT"                     #sws niet nodig, overal gedefineerd
 
     #-------------------------------------------------------------------------------------------------------------------------
     # Adding nodes and elements
@@ -153,8 +153,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     if loadcontroller is not None:
         for element in Surface.findall('pt'):
             loadcontroller.remove(element)
-    else:
-        print('loadcontroller not found')
+
     
     print('emptied.xml')
 
@@ -208,19 +207,36 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     # Add loadcurves
     # ------------------------------------------------------------------------------------------------------------------------
     #amplification factor of the load as loadcurve
-    def loadcurve(time_steps, step_size, root, t_start, t_end, n):
+    def loadcurve(interpolate,extend, time_steps, step_size,cycle, root, t_start, t_end, n):
         loadcurve_list = np.zeros((time_steps, 2))
-        for i in range(time_steps):
-            t = i * step_size                                       #timepoint at each step
-            if t < t_start:                                         #amplification factor = 0 for time before t start
-                f = 0
-            elif t_start <= t < t_end:                              #amplification factor = 1 for time between t start and t end
-                f = 1
-            else:                                                   #amplification factor = 0 for time after t end
-                f = 0
-            loadcurve_list[i] = np.array([t, f])                         #add function f(t) as points
-
         
+        dt = t_end-t_start
+        if n == 1:
+            for i in range(time_steps):
+                t = (i) * step_size                                       #timepoint at each step
+                if (t % cycle) < (t_start-dt):                                         #amplification factor = 0 for time before t start
+                    f = 0
+                elif (t_start+cycle-dt)<= (t % cycle) < cycle:                              #amplification factor = 1 for time between t start and t end
+                    f = ((t % cycle)-t_start-cycle+dt)/dt
+                elif t_start<= (t % cycle) < (t_start+dt):                              #amplification factor = 1 for time between t start and t end
+                    f = (-(t % cycle)+t_start+dt)/dt
+                else:                                                   #amplification factor = 0 for time after t end
+                    f = 0
+                loadcurve_list[i] = np.array([t, f])                         #add function f(t) as points
+
+        else: 
+            for i in range(time_steps):
+                t = (i) * step_size                                       #timepoint at each step
+                if (t % cycle) < (t_start-dt):                                         #amplification factor = 0 for time before t start
+                    f = 0
+                elif (t_start-dt)<= (t % cycle) < t_start:                              #amplification factor = 1 for time between t start and t end
+                    f = ((t % cycle)-t_start+dt)/dt
+                elif t_start<= (t % cycle) < (t_start+dt):                              #amplification factor = 1 for time between t start and t end
+                    f = (-(t % cycle)+t_start+dt)/dt
+                else:                                                   #amplification factor = 0 for time after t end
+                    f = 0
+                loadcurve_list[i] = np.array([t, f])                         #add function f(t) as points
+
         load_main = root.find('.//LoadData')
         new_controller = ET.SubElement(load_main, 'load_controller')
         new_controller.set('id', f"{n}")
@@ -228,11 +244,11 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
         new_controller.tail = '\n\t\t\t'
 
         interpolate_lc = ET.SubElement(new_controller, 'interpolate')
-        interpolate_lc.text = 'Step'
+        interpolate_lc.text = str(interpolate)
         interpolate_lc.tail = '\n\t\t\t'
 
         extend_lc = ET.SubElement(new_controller, 'extend')
-        extend_lc.text = 'CONSTANT'
+        extend_lc.text = str(extend)
         extend_lc.tail = '\n\t\t\t'
 
         points_lc = ET.SubElement(new_controller, 'points')
@@ -251,9 +267,12 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
             points_element.append(element)                  #add points to the xml
 
     #one loadcurve for each velocityprofile snapshot:
-    for i in range(len(velocity_profile)):
-        loadcurve(time_steps, step_size, root, i/5, (i+1)/5, i +1)
-
+    hr = 60             #bpm
+    cycle = hr/60       #time in seconds
+    profiles = len(velocity_profile)
+    for i in range(profiles):
+        loadcurve(interpolate, extend, time_steps, step_size,cycle, root, (cycle/profiles)*i, (cycle/profiles)*(i+1), i +1)
+    
     print('finished loadcontroller')
 
     #-------------------------------------------------------------------------------------------------------------------------
@@ -532,7 +551,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     material.set('type',str(materialtype))
     viscous  = root.find('./Material/material/viscous')
     viscous.set('type',str(viscoustype))
-    print('test')
+    
 
     #-------------------------------------------------------------------------------------------------------------------------
     # Output
