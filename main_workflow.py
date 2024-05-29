@@ -110,9 +110,9 @@ for i in range(n_geometries):
     os.makedirs(output_folder, exist_ok=True)
 
     #Grab the path of the geometry files
-    inlet_path = osp.join(input_folder, r'inlet.stl')
-    wall_path = osp.join(input_folder, r'wall.stl')
-    outlet_path = osp.join(input_folder, r'outlet.stl')
+    inlet_path = osp.join(input_folder, r'meshes\inlet.stl')
+    wall_path = osp.join(input_folder, r'meshes\wall.stl')
+    outlet_path = osp.join(input_folder, r'meshes\outlet.stl')
 
     print('Created necessary files and directories')
 
@@ -182,8 +182,7 @@ for i in range(n_geometries):
     pv.save_meshio(osp.join(temp_dir, r'initial_volume_mesh.mesh'), tetmesh)
 
     #Refine 3D mesh with mmg3d
-    tetmesh = volume_mesh.mmg3d(osp.join(temp_dir, r'initial_volume_mesh.mesh'), osp.join(temp_dir, r'mmg3d_mesh.mesh'),
-                                    temp_dir, mmg3d_parameters, plot=show_plot)
+    tetmesh = volume_mesh.mmg3d(osp.join(temp_dir, r'initial_volume_mesh.mesh'), osp.join(temp_dir, r'mmg3d_mesh.mesh'), temp_dir, mmg3d_parameters, plot=show_plot)
 
     #Report quality
     report = quality_control.meshreport(tetmesh, 'Refined 3D mesh quality report')
