@@ -68,12 +68,14 @@ intp_options = {
 
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = True
+show_plot = False
 
 
 #Create file environment before looping
+#Get directory of main_workflow file
 file_dir = osp.dirname(osp.realpath(__file__))  
 
+#Ask user input, velocity profile and output directory. If output directory is not given it creates an output directory in file_dir
 input_dir = askdirectory(title='Select Folder Containing Geometries') # shows dialog box and return the path 
 vel_profile_dir = askdirectory(title='Select Velocity Profile Folder') # shows dialog box and return the path
 output_dir = askdirectory(title='Select Output Folder')
@@ -82,25 +84,32 @@ if output_dir == '':
     output_dir = osp.join(file_dir, r'output')
     os.makedirs(output_dir, exist_ok=True)
 
+#Create a temporary directory
 temp_dir = osp.join(file_dir, r'temp')
 os.makedirs(temp_dir, exist_ok=True)
 
+#Select input folder names and count the amount of input geometries
 input_list = os.listdir(input_dir)
 n_geometries = len(input_list)
 
+
 print('Setup done')
+
+#-----------------------------------------Start automatic meshing workflow-------------------------------------------------
 
 #--------------------------------------------------------------------------------------------------------------------------
 # Environment creation
 #--------------------------------------------------------------------------------------------------------------------------
 
 for i in range(n_geometries):
+    #Creates an output folder for specific case, based on the input folder name
     input_folder = osp.join(input_dir, input_list[i])
     output_name = f'0{i}_Result_{input_list[i]}'
     output_folder = osp.join(output_dir, output_name)
 
     os.makedirs(output_folder, exist_ok=True)
 
+    #Grab the path of the geometry files
     inlet_path = osp.join(input_folder, r'inlet.stl')
     wall_path = osp.join(input_folder, r'wall.stl')
     outlet_path = osp.join(input_folder, r'outlet.stl')
@@ -257,14 +266,20 @@ for i in range(n_geometries):
 #Deletes the temporary folder (might want to modify it to only delete the files)
 shutil.rmtree(temp_dir)
 
+#-----------------------------------------Start automatic simulation workflow-------------------------------------------------
+
 #----------------------------------------------------------------------------------------------------------------------------
 # FEBio Run
 #----------------------------------------------------------------------------------------------------------------------------
 
+#Grab the names of the output folders
 output_list = os.listdir(output_dir)
+
+#Path for FEBio solver executable
 #FEBio_path = r"C:/Program Files/bin/febio4.exe" #Path voor Yarran
 FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe" #Path voor normale mensen
 
+#Run for every geometry a simulation
 for sim in output_list:
     #Run FEBio
     sim_folder = osp.join(output_dir, sim)
