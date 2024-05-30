@@ -30,11 +30,11 @@ import shutil
 mmg_parameters = {
     'mesh_density': '0.1', #hausdorf parameter of mmg, defines amount of added detail at curvature
     'sizing': '1', #forces similarly sized poly's, legacy option (used for stitching), can possibly be dropped
-    'detection angle': '35'}
+    'detection angle': '45'}
 
 mmg3d_parameters = {
     'hausd': '0.1',
-    'detection angle': '35'}
+    'detection angle': '45'}
 
 mmg3d_sol_parameters = {
     'bl_thickness': 1,
