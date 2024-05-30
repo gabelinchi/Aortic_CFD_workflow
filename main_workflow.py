@@ -68,7 +68,7 @@ intp_options = {
 
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = False
+show_plot = True
 
 
 #Create file environment before looping
@@ -110,9 +110,9 @@ for i in range(n_geometries):
     os.makedirs(output_folder, exist_ok=True)
 
     #Grab the path of the geometry files
-    inlet_path = osp.join(input_folder, r'meshes\inlet.stl')
-    wall_path = osp.join(input_folder, r'meshes\wall.stl')
-    outlet_path = osp.join(input_folder, r'meshes\outlet.stl')
+    inlet_path = osp.join(input_folder, osp.join(r'meshes', r'inlet.stl'))
+    wall_path = osp.join(input_folder, osp.join(r'meshes', r'wall.stl'))
+    outlet_path = osp.join(input_folder, osp.join(r'meshes', r'outlet.stl'))
 
     print('Created necessary files and directories')
 
