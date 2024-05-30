@@ -136,18 +136,31 @@ def areaselection(areas):
     smallest area: the minimal area after the aortic root
     smallest area index: index of smallest area in areas
     '''
+    print(areas)
+    print(len(areas))
     # Find the indices where the tube transitions from wide to narrow and narrow to wide
     diff_areas = np.diff(areas)
+    print(diff_areas)
+    print(len(diff_areas))
     transition_indices = np.where(np.logical_or(diff_areas < 0, diff_areas == 0))[0]
+    print(transition_indices)
 
     #Find the areas between these transition points
     area_segments = np.split(areas, transition_indices + 1)
+    print(area_segments)
 
     #Select the segments that have a narrow part and are larger than 1. This result in multiple arrays that go from a smaller to a larger area
     narrow_segments = [segment for segment in area_segments if len(segment) > 1 and segment[0] < segment[-1]]
+    print(narrow_segments)
 
-    #Select the smallest area from the second small segment. This should be the constriction after the aortic root (might want to find a smarter solution for this, but for now this works)
-    smallest_area = min(narrow_segments[1]) #Gives out of bound error when there is no constriction
+    #Select the smallest area from the second small segment. This should be the constriction after the aortic root
+    if len(narrow_segments) > 1:
+        smallest_area = min(narrow_segments[1]) #Gives out of bound error when there is no constriction
+    else: 
+        transition_index = np.argmin(diff_areas)
+        print(transition_index)
+        smallest_area = areas[transition_index]
+        print(smallest_area)
 
     #Grab the index of the smallest_area
     smallest_index_calc = np.where(smallest_area == areas)
