@@ -88,6 +88,12 @@ if output_dir == '':
 temp_dir = osp.join(file_dir, r'temp')
 os.makedirs(temp_dir, exist_ok=True)
 
+#Create log directory with a directory inside for the reports of bad quality meshes
+log_dir = osp.join(file_dir, r'log')
+os.makedirs(log_dir, exist_ok=True)
+
+os.makedirs(osp.join(log_dir, r'failed'), exist_ok=True)
+
 #Select input folder names and count the amount of input geometries
 input_list = os.listdir(input_dir)
 n_geometries = len(input_list)
@@ -221,13 +227,13 @@ for i in range(n_geometries):
     if run==False:
         print('Terminating, 3D mesh insufficient quality or too many nodes')
         print('See log files for quality rapport')
-        log_dir = osp.join(file_dir, r'log\failed')
-        ut.save_string_to_file(report_text, osp.join(log_dir, f'Qualityreport_failed_geometry_{input_list[i]}'))
+        log_folder = osp.join(file_dir, r'log\failed')
+        ut.save_string_to_file(report_text, osp.join(log_folder, f'Qualityreport_failed_geometry_{input_list[i]}'))
         continue
     else:
         print('Quality is sufficient')
-        log_dir = osp.join(file_dir, r'log')
-        ut.save_string_to_file(report_text, osp.join(log_dir, f'Qualityreport_geometry_{input_list[i]}'))
+        log_folder = osp.join(file_dir, r'log')
+        ut.save_string_to_file(report_text, osp.join(log_folder, f'Qualityreport_geometry_{input_list[i]}'))
 
 
     #----------------------------------------------------------------------------------------------------------------------------
