@@ -68,7 +68,7 @@ intp_options = {
 
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = True
+show_plot = False
 
 
 #Create file environment before looping
@@ -107,7 +107,6 @@ for i in range(n_geometries):
     output_name = f'0{i}_Result_{input_list[i]}'
     output_folder = osp.join(output_dir, output_name)
 
-    os.makedirs(output_folder, exist_ok=True)
 
     #Grab the path of the geometry files
     inlet_path = osp.join(input_folder, osp.join(r'meshes', r'inlet.stl'))
@@ -185,7 +184,7 @@ for i in range(n_geometries):
     tetmesh = volume_mesh.mmg3d(osp.join(temp_dir, r'initial_volume_mesh.mesh'), osp.join(temp_dir, r'mmg3d_mesh.mesh'), temp_dir, mmg3d_parameters, plot=show_plot)
 
     #Report quality
-    report = quality_control.meshreport(tetmesh, 'Refined 3D mesh quality report')
+    report, report_text = quality_control.meshreport(tetmesh, f'Refined 3D mesh quality report {input_list[i]}')
 
     #Plot bad cells
     jac = report['jac']
@@ -218,9 +217,18 @@ for i in range(n_geometries):
         else:text='Final 3D mesh - insufficient quality or too many nodes'
         tetmesh.plot(show_edges = True, text=text)
 
+    #Write a log file of the mesh quality and continue to next geometry if quality is not sufficient.
     if run==False:
         print('Terminating, 3D mesh insufficient quality or too many nodes')
-        exit()
+        print('See log files for quality rapport')
+        log_dir = osp.join(file_dir, r'log\failed')
+        ut.save_string_to_file(report_text, osp.join(log_dir, f'Qualityreport_failed_geometry_{input_list[i]}'))
+        continue
+    else:
+        print('Quality is sufficient')
+        log_dir = osp.join(file_dir, r'log')
+        ut.save_string_to_file(report_text, osp.join(log_dir, f'Qualityreport_geometry_{input_list[i]}'))
+
 
     #----------------------------------------------------------------------------------------------------------------------------
     # Identification
@@ -247,6 +255,8 @@ for i in range(n_geometries):
         plt.add_mesh(id_wall, show_edges = True, color = 'green')
         plt.show()
 
+    #At this point meshing is succesfull and output files are written, geometry specific output folder is created.
+    os.makedirs(output_folder, exist_ok=True)
     #----------------------------------------------------------------------------------------------------------------------------
     # Mapping
     #----------------------------------------------------------------------------------------------------------------------------
