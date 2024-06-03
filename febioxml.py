@@ -17,7 +17,8 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     #-------------------------------------------------------------------------------------------------------------------------
     # Inputs
     # ------------------------------------------------------------------------------------------------------------------------
-    
+    hr = 60             #heartrate in bpm for cycle time
+
     #outputs
     output_displacement = False
     output_fluid_pressure = False
@@ -42,12 +43,6 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     zerofluidvelocity_x = True
     zerofluidvelocity_y = True
     zerofluidvelocity_z = True
-
-    #Loads
-    velocity = -1                          #negative want moet aorta in, normals staan mesh uit (naar buiten)
-    prescribe_nodal_velocities = True
-    parabolic = True
-    prescribe_rim_pressure= True
 
     #SimulationControl
     analysis = 'DYNAMIC'
@@ -279,7 +274,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
             points_element.append(element)                  #add points to the xml
 
     #one loadcurve for each velocityprofile snapshot:
-    hr = 60             #bpm
+    
     cycle = hr/60       #time in seconds
     profiles = len(velocity_profile)
     for i in range(profiles):
@@ -453,6 +448,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
         else:
                 print(f"Element '{variable}' under '{parent}' not found.")
         return
+
     #single parent
     Parent1('Control', 'analysis', str(analysis))
     Parent1('Control', 'time_steps', str(time_steps))
@@ -537,14 +533,6 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     Parent2('Boundary', 'bc', 'wy_dof', str(int(zerofluidvelocity_y)))
     Parent2('Boundary', 'bc', 'wz_dof', str(int(zerofluidvelocity_z)))
 
-    #Parent2('Loads', 'surface_load', 'velocity', str(velocity))
-    #Parent2('Loads', 'surface_load', 'prescribe_nodal_velocities', str(int(prescribe_nodal_velocities)))
-    #Parent2('Loads', 'surface_load', 'parabolic', str(int(parabolic)))
-    #Parent2('Loads', 'surface_load', 'parabolic', str(int(prescribe_rim_pressure)))
-    
-    #Parent2('LoadData', 'load_controller', 'interpolate', str(interpolate))
-    #Parent2('LoadData', 'load_controller', 'extend', str(extend))
-
     #triple parent
     Parent3('Material', 'material', 'viscous', 'kappa', str(kappa))
     Parent3('Material', 'material', 'viscous', 'mu', str(mu))
@@ -553,7 +541,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     Parent3('Control', 'solver', 'qn_method', 'cycle_buffer', str(cycle_buffer))
     Parent3('Control', 'solver', 'qn_method', 'cmax', str(cmax))
 
-
+    #types
     timestepper  = root.find('./Control/time_stepper')      
     timestepper.set('type',str(time_stepper_type))
     solver  = root.find('./Control/solver')
