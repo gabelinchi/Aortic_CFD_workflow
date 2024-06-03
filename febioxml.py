@@ -18,6 +18,18 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     # Inputs
     # ------------------------------------------------------------------------------------------------------------------------
     
+    #outputs
+    output_displacement = False
+    output_fluid_pressure = False
+    output_nodal_fluid_velocity = False
+    output_fluid_stress = True
+    output_fluid_velocity = True
+    output_fluid_acceleration = False
+    output_fluid_vorticity = False
+    output_fluid_rate_of_deformation = False
+    output_fluid_dilatation = False
+    output_fluid_volume_ratio = False
+
     #fluidconstants
     materialtype = 'fluid'
     density = 1000
@@ -557,6 +569,34 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     #-------------------------------------------------------------------------------------------------------------------------
     # Output
     # ------------------------------------------------------------------------------------------------------------------------
+    def outputs(output):
+        output_main = root.find('.//Output/plotfile[@type="febio"]')
+        new_output = ET.SubElement(output_main, 'var')
+        new_output.set('type', f"{output}")
+        new_output.tail = '\n\t\t'
+        return
+
+    if output_displacement==True:
+        outputs('displacement')
+    if output_fluid_pressure == True:
+        outputs('fluid pressure')
+    if output_nodal_fluid_velocity == True:
+        outputs('nodal fluid velocity')
+    if output_fluid_stress == True:
+        outputs('fluid stress')
+    if output_fluid_velocity == True:
+        outputs('fluid velocity')
+    if output_fluid_acceleration == True:
+        outputs('fluid acceleration')
+    if output_fluid_vorticity == True:
+        outputs('fluid vorticity')
+    if output_fluid_rate_of_deformation == True:
+        outputs('fluid rate of deformation')
+    if output_fluid_dilatation == True:
+        outputs('fluid dilatation')
+    if output_fluid_volume_ratio == True:
+        outputs('fluid volume ratio')
+
 
     #create FEBio file
     tree.write(osp.join(output_dir, r'simulation.feb'), encoding='ISO-8859-1', xml_declaration=True,)
