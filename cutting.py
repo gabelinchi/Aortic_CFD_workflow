@@ -1,6 +1,7 @@
 import numpy as np
 import pyvista as pv
 import utils as ut
+import matplotlib.pyplot as pyplt
 
 
 #main function that runs the cutter script
@@ -85,12 +86,10 @@ def centerline(inlet, wall, dist=40, flip_norm=False):
     count = 0
 
     #Create a while loop with a max count around 200 or something
-    while count < 200:
-
+    while count < 1145:
         #Create a new point by adding the directional vector to the centernode of the previous edgeprofile (previous iteration)
         inter_center = np.add(center, normal)
         #Use this new point and the previous directional vector to make a cut of the wall mesh
-
         inter_profile = get_clip_perimeter(inter_center, normal, wall) #Extract the edge profile (temporary) and isolate the profile (with connectivity) which we want to continue working with
         #From the isolated profile (temporary), calculate the new center point
         inter_profile_points = inter_profile.points
@@ -269,3 +268,69 @@ def get_clip_perimeter(point, normal, wall, plot=False):
         edges.plot()
         edge.plot()
     return(edge)
+
+#Development and testing code
+#---------------------------#
+
+def make_points():
+    """Helper to make XYZ points"""
+    theta = np.linspace(-4 * np.pi, 4 * np.pi, 100)
+    z = np.linspace(-2, 2, 100)
+    r = z**2 + 1
+    x = r * np.sin(theta)
+    y = r * np.cos(theta)
+    return (np.column_stack((x, y, z))*4, r*4)
+
+points, r = make_points()
+spline = pv.Spline(points, 1000)
+spline["theta"] = 0.4 * np.arange(len(spline.points))
+spline["radius"] = np.abs(np.sin(spline["theta"]))*0.3 + 1
+tube = spline.tube(scalars="radius", absolute=True)
+tube.plot(scalars="theta", smooth_shading=True)
+
+scale = 5
+tube=tube.scale(scale)
+points=spline.points*scale
+
+""" tubestart = cut(points[0]+0.02*(points[1]-points[0]), -(points[1]-points[0]), tube)
+tubestart = tubestart.connectivity('closest', points[0]).extract_surface()
+tubecenternodes = centerline(tubestart, tube, 1000, flip_norm=True)[0]
+pv.lines_from_points(tubecenternodes).plot()
+pv.lines_from_points(tubecenternodes).save('C:/Users/Yarran/OneDrive/Uni_Documenten/2023-24/BEP/VMTK/ourcenterline.vtp')
+tube.save('C:/Users/Yarran/OneDrive/Uni_Documenten/2023-24/BEP/VMTK/tube.vtp')
+
+plt = pv.Plotter()
+plt.add_mesh(tube, style='wireframe')
+plt.add_points(tubecenternodes, color='red')
+plt.show() """
+
+vmtkcenterline = pv.read('C:/Users/Yarran/OneDrive/Uni_Documenten/2023-24/BEP/VMTK/tubecenterline.vtp')
+ourcenterline = pv.read('C:/Users/Yarran/OneDrive/Uni_Documenten/2023-24/BEP/VMTK/ourcenterline.vtp')
+
+vmtkcenterline.plot()
+
+plt = pv.Plotter()
+plt.add_mesh(ourcenterline, color='red')
+plt.add_mesh(vmtkcenterline, color = 'green')
+plt.add_mesh(tube, style='wireframe')
+plt.show()
+
+dist_vmtk = np.linalg.norm(vmtkcenterline.find_closest_cell(points, return_closest_point=True)[1]-points, axis=1)
+dist_slicing = np.linalg.norm(ourcenterline.find_closest_cell(points, return_closest_point=True)[1]-points, axis=1)
+
+rel_vmtk = dist_vmtk/(spline['radius']*scale*2)
+rel_slicing = dist_slicing/(spline['radius']*scale*2)
+
+# Original indices (0 to 99)
+original_indices = np.arange(100)
+# New indices (0 to 999)
+new_indices = np.linspace(0, 99, 1000)
+# Interpolated array of length 1000
+r_interp = np.interp(new_indices, original_indices, r)*scale
+print(tube.bounds)
+
+pyplt.plot(rel_vmtk[10:-10]* 100, label = 'vmtk error [% of diam]')
+pyplt.plot(rel_slicing[10:-10]* 100, label = 'slicing error [% of diam]')
+pyplt.plot(r_interp/10, label = 'turn radius [cm]')
+pyplt.legend()
+pyplt.show()
