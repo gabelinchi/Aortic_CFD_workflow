@@ -68,7 +68,7 @@ intp_options = {
 
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = False
+show_plot = True
 
 
 #Create file environment before looping
@@ -135,11 +135,11 @@ for i in range(n_geometries):
     #--------------------------------------------------------------------------------------------------------------------------
 
     #Cut the wall geometry after the aortic root
-    wall_cut = cutting.main_cutter(inlet, wall, plot=show_plot)
+    wall_cut, inlet_new_center = cutting.main_cutter(inlet, wall, plot=show_plot)
     pv.save_meshio(osp.join(temp_dir, r'wall_cut.mesh'), wall_cut)
 
     #Create caps
-    inlet_cap, outlet_cap = cap(wall_cut, plot=show_plot)
+    inlet_cap, outlet_cap = cap(wall_cut, inlet_new_center, outlet.points.mean(0), plot=show_plot)
     pv.save_meshio(osp.join(temp_dir, r'inlet_cap.mesh'), inlet_cap)
     pv.save_meshio(osp.join(temp_dir, r'outlet_cap.mesh'), outlet_cap)
 

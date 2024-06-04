@@ -38,7 +38,7 @@ def main_cutter(inlet, wall, plot=False):
     new_geometry = cut(center_final, normal_final, wall, plot=plot)
 
     print('Cutting done')    
-    return new_geometry
+    return (new_geometry, center_final)
 
 def centerline(inlet, wall, dist=40, flip_norm=False):
     '''

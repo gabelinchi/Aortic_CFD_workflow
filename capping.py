@@ -9,7 +9,7 @@ import utils as ut
 
 
 
-def cap(wall, plot=False):
+def cap(wall, inlet_center, outlet_center, plot=False):
     '''
     Creates caps for a vessel with a single inlet & outlet
     Inlet & outlet are assigned based on the number of nodes, cap with the most nodes becomes the inlet by default
@@ -29,12 +29,12 @@ def cap(wall, plot=False):
         edges.plot(color='red')
     
     # Split edges into separate data
-    edges = edges.connectivity('all')
-    edges = edges.split_bodies()
-    
+    inlet_edges = edges.connectivity('closest', inlet_center)
+    outlet_edges = edges.connectivity('closest', outlet_center)
+
     #Create a solid spiderweb-like surface mesh
-    inlet = ut.make_spiderweb(edges[0])
-    outlet = ut.make_spiderweb(edges[1])
+    inlet = ut.make_spiderweb(pv.UnstructuredGrid(inlet_edges))
+    outlet = ut.make_spiderweb(pv.UnstructuredGrid(outlet_edges))
 
     #Plot final result of capping function 
     if plot==True:
