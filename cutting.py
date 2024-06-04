@@ -347,7 +347,7 @@ def aorta_geom():
     plt = pv.Plotter()
     plt.add_mesh(wall, style='wireframe')
     plt.add_mesh(vmtk_centerline, color='green')
-    plt.add_points(centernodes, color='red')
+    plt.add_mesh(pv.lines_from_points(centernodes), color='red')
     plt.show()
 
     dist = np.linalg.norm(vmtk_centerline.find_closest_cell(centernodes, return_closest_point=True)[1]-centernodes, axis=1)
@@ -359,5 +359,5 @@ def aorta_geom():
     pyplt.show()
     return
 
-ref_geom()
+#ref_geom()
 aorta_geom()
