@@ -27,6 +27,8 @@ import shutil
 #----------------------------------------------------------------------------------------------------------------------------
 
 #Meshing parameters
+max_retry = 1
+
 mmg_parameters = {
     'mesh_density': '0.1', #hausdorf parameter of mmg, defines amount of added detail at curvature
     'sizing': '1', #forces similarly sized poly's, legacy option (used for stitching), can possibly be dropped
@@ -68,7 +70,7 @@ intp_options = {
 
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = True
+show_plot = False
 
 
 #Create file environment before looping
@@ -115,7 +117,6 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
     output_name = f'0{i}_Result_{input_list[i]}'
     output_folder = osp.join(output_dir, output_name)
 
-
     #Grab the path of the geometry files
     inlet_path = osp.join(input_folder, osp.join(r'meshes', r'inlet.stl'))
     wall_path = osp.join(input_folder, osp.join(r'meshes', r'wall.stl'))
@@ -128,6 +129,7 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
     if retry > 0:
         remesh.remesh(wall_path, temp_dir, mmg_parameters, show_plot)
         wall = pv.read(osp.join(temp_dir, r'wall_remeshed.vtk'))
+        wall = wall.extract_surface().triangulate()
     else:
         wall = pv.read(wall_path)
     outlet = pv.read(outlet_path)
@@ -151,6 +153,7 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
 
     #Combine cutted wall and inlet/outlet caps
     combined = (wall_cut + inlet_cap + outlet_cap).clean()
+    combined.clear_data()
     print('Meshes succesfully combined')
 
     #Plot result of mesh combining. When edgetest gives an error, the structure has dublicate faces/nodes
@@ -163,10 +166,8 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
     pv.save_meshio(osp.join(temp_dir, r'combined_mesh.mesh'), combined)
 
 
-
     #Run remesh (takes predetermined internally defined file path as input, DON'T CHANGE)
     combined_remeshed = remesh.remesh_edge_detect(osp.join(temp_dir, r'combined_mesh.mesh'), osp.join(temp_dir, r'combined_mmg.mesh'), temp_dir, mmg_parameters, plot=show_plot)
-
     #triangulation step to make sure Tetgen only gets triangles as input
     combined_remeshed = combined_remeshed.extract_surface().triangulate()
 
@@ -230,11 +231,11 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
         tetmesh.plot(show_edges = True, text=text)
 
     #Write a log file of the mesh quality and continue to next geometry if quality is not sufficient.
-    if run==False and retry < 1:
+    if run==False and retry < max_retry:
         print('Mesh quality insufficient, starting new meshing attempt')
         retry += 1
         continue
-    elif run==False and retry >= 1:
+    elif run==False and retry >= max_retry:
         print('Terminating, 3D mesh insufficient quality or too many nodes')
         print('See log files for quality rapport')
         log_folder = osp.join(file_dir, r'log\failed')
