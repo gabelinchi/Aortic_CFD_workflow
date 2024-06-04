@@ -68,7 +68,7 @@ intp_options = {
 
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = False
+show_plot = True
 
 
 #Create file environment before looping
@@ -107,8 +107,10 @@ print('Setup done')
 # Environment creation
 #--------------------------------------------------------------------------------------------------------------------------
 
-for i in range(n_geometries):
-    #Creates an output folder for specific case, based on the input folder name
+i = 0
+retry = 0
+
+while i <= (n_geometries - 1):    #Creates an output folder for specific case, based on the input folder name
     input_folder = osp.join(input_dir, input_list[i])
     output_name = f'0{i}_Result_{input_list[i]}'
     output_folder = osp.join(output_dir, output_name)
@@ -123,7 +125,11 @@ for i in range(n_geometries):
 
     #Reading the files with pyvista
     inlet = pv.read(inlet_path)
-    wall = pv.read(wall_path)
+    if retry > 0:
+        remesh.remesh(wall_path, temp_dir, mmg_parameters, show_plot)
+        wall = pv.read(osp.join(temp_dir, r'wall_remeshed.vtk'))
+    else:
+        wall = pv.read(wall_path)
     outlet = pv.read(outlet_path)
 
     print('import of geometry done')
@@ -224,16 +230,22 @@ for i in range(n_geometries):
         tetmesh.plot(show_edges = True, text=text)
 
     #Write a log file of the mesh quality and continue to next geometry if quality is not sufficient.
-    if run==False:
+    if run==False and retry < 1:
+        print('Mesh quality insufficient, starting new meshing attempt')
+        retry += 1
+        continue
+    elif run==False and retry >= 1:
         print('Terminating, 3D mesh insufficient quality or too many nodes')
         print('See log files for quality rapport')
         log_folder = osp.join(file_dir, r'log\failed')
         ut.save_string_to_file(report_text, osp.join(log_folder, f'Qualityreport_failed_geometry_{input_list[i]}'))
+        i += 1
         continue
     else:
         print('Quality is sufficient')
         log_folder = osp.join(file_dir, r'log')
         ut.save_string_to_file(report_text, osp.join(log_folder, f'Qualityreport_geometry_{input_list[i]}'))
+        retry = 0
 
 
     #----------------------------------------------------------------------------------------------------------------------------
@@ -277,6 +289,8 @@ for i in range(n_geometries):
 
     #Create a solver compatible file based on the 3D-mesh and meshing parameters
     feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_mapped, file_dir, output_folder)
+
+    i += 1
 
 #Deletes the temporary folder (might want to modify it to only delete the files)
 shutil.rmtree(temp_dir)

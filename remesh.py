@@ -9,42 +9,29 @@ import meshio
 import subprocess as sub
 
 #General remesh function, currently not used in the workflow (MIGHT DELETE IN FINAL PRODUCT!)
-def remesh(inlet_path, wall_path, output_path, parameters, plot=False):
+def remesh(wall_path, temp_dir ,parameters, plot=False):
     # Convert input file from stl to .mesh
-    meshio.write('inlet.mesh', meshio.read(inlet_path))
-    meshio.write('wall.mesh', meshio.read(wall_path))
-    meshio.write('outlet.mesh', meshio.read(output_path))
+    meshio.write(osp.join(temp_dir, r'wall.mesh'), meshio.read(wall_path))
 
     density = parameters['mesh_density']
     sizing = parameters['sizing']
     indentation = ' '
 
-    #inlet_command = f"{'py -m mmgs -hausd'}{indentation}{density}{indentation}{'inlet.mesh inlet_mmg.mesh -hsiz'}{indentation}{sizing}"
-
-    print('Start 2D remesh')
+    print('Start 2D remesh of wall')
 
     # Run mmg
-    sub.run(f"{'py -m mmgs -hausd'}{indentation}{density}{indentation}{'inlet.mesh inlet_mmg.mesh -hsiz'}{indentation}{sizing}")
-    sub.run(f"{'py -m mmgs -hausd'}{indentation}{density}{indentation}{'wall.mesh wall_mmg.mesh -hsiz'}{indentation}{sizing}")
-    sub.run(f"{'py -m mmgs -hausd'}{indentation}{density}{indentation}{'outlet.mesh outlet_mmg.mesh -hsiz'}{indentation}{sizing}")
+    sub.run(f"{'py -m mmgs -hausd'}{indentation}{density}{indentation}{'wall.mesh wall_remeshed.mesh -hsiz'}{indentation}{sizing}")
 
     # Convert back to .vtk and plot with pyvista
-    meshio.write('inlet_mmg.vtk', meshio.read('inlet_mmg.mesh'))
-    meshio.write('wall_mmg.vtk', meshio.read('wall_mmg.mesh'))
-    meshio.write('outlet_mmg.vtk', meshio.read('outlet_mmg.mesh'))
+    meshio.write('wall_remeshed.vtk', meshio.read('wall_remeshed.mesh'))
 
     if plot:
-        inlet_remeshed = pv.read('inlet_mmg.vtk')
-        wall_remeshed = pv.read('wall_mmg.vtk')
-        outlet_remeshed = pv.read('outlet_mmg.vtk')
-
-        inlet_remeshed.plot(show_edges = True)
+        wall_remeshed = pv.read('wall_remeshed.vtk')
         wall_remeshed.plot(show_edges = True)
-        outlet_remeshed.plot(show_edges = True)
 
-    print('Succesfully remeshed geometry')
+    print('Succesfully remeshed wall')
 
-    return inlet_remeshed, wall_remeshed, outlet_remeshed
+    return
 
 def remesh_edge_detect(in_path, out_path, temp_path, parameters, plot=False):
     '''
