@@ -17,7 +17,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     #-------------------------------------------------------------------------------------------------------------------------
     # Inputs
     # ------------------------------------------------------------------------------------------------------------------------
-    hr = 60             #heartrate in bpm for cycle time
+    hr = 100             #heartrate in bpm for cycle time
 
     #outputs
     output_displacement = False
@@ -275,7 +275,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
 
     #one loadcurve for each velocityprofile snapshot:
     
-    cycle = hr/60       #time in seconds
+    cycle = 60/hr       #time in seconds
     profiles = len(velocity_profile)
     for i in range(profiles):
         loadcurve(interpolate, extend, time_steps, step_size,cycle, root, (cycle/profiles)*i, (cycle/profiles)*(i+1), i +1)

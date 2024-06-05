@@ -27,7 +27,7 @@ import shutil
 #----------------------------------------------------------------------------------------------------------------------------
 
 #Meshing parameters
-max_retry = 1
+max_retry = 2
 
 mmg_parameters = {
     'mesh_density': '0.1', #hausdorf parameter of mmg, defines amount of added detail at curvature
@@ -70,7 +70,7 @@ intp_options = {
 
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = True
+show_plot = False
 
 
 #Create file environment before looping
@@ -172,11 +172,23 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
     combined_remeshed = combined_remeshed.extract_surface().triangulate()
 
     #Report quality
-    quality_control.meshreport(combined_remeshed, 'Surface mesh quality report')
+    report_text_2D = quality_control.meshreport(combined_remeshed, 'Surface mesh quality report')[1]
 
     #Make an initial 3D mesh from the combined mesh using TetGen
     combined_remeshed = combined_remeshed
-    tetmesh = volume_mesh.tetgen(combined_remeshed, tetgen_parameters, plot=show_plot)
+    try:
+        tetmesh = volume_mesh.tetgen(combined_remeshed, tetgen_parameters, plot=show_plot)
+    except:
+        print('Non-closed surface due to initial geometry error, perform retry')
+        retry += 1
+        if retry < max_retry:
+            print('Terminating, unable to create 3D mesh')
+            print('See log files for quality rapport')
+            log_folder = osp.join(file_dir, r'log\failed')
+            ut.save_string_to_file(report_text_2D, osp.join(log_folder, f'Qualityreport_failed_geometry_{input_list[i]}'))
+            i += 1
+            continue
+        continue
 
     #Plot bisection
     if show_plot:
@@ -310,12 +322,15 @@ output_list = os.listdir(output_dir)
 FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe" #Path voor normale mensen
 
 #Run for every geometry a simulation
-for sim in output_list:
+for sim in sorted(output_list):
     #Run FEBio
     sim_folder = osp.join(output_dir, sim)
     #Use the current
     FEBio_inputfile = osp.join(sim_folder, r'simulation.feb')
-    subprocess.run([FEBio_path, FEBio_inputfile], check = True)
+    try:
+        subprocess.run([FEBio_path, FEBio_inputfile], check = True)
+    except:
+        continue
 
 print('Done!')
 
