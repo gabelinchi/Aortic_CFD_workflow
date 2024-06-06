@@ -25,6 +25,39 @@ import shutil
 #----------------------------------------------------------------------------------------------------------------------------
 # Setup
 #----------------------------------------------------------------------------------------------------------------------------
+FEBio_parameters = dict(
+    hr = 100,             #heartrate in bpm for cycle time
+    
+    #outputs
+    displacement = False,
+    fluid_pressure = False,
+    nodal_fluid_velocity = False,
+    fluid_stress = True,
+    fluid_velocity = True,
+    fluid_acceleration = False,
+    fluid_vorticity = False,
+    fluid_rate_of_deformation = False,
+    fluid_dilatation = False,
+    fluid_volume_ratio = False,
+    
+    #fluidconstants
+    materialtype = 'fluid',
+    density = 1000,                                  #kg/m^3
+    k = 2200000,                                     #bulkmodulus
+    viscoustype = "Newtonian fluid",
+    kappa = 1,                                       #bulk viscosity 
+    mu = 0.056,                                      #shear viscosity)
+    
+    #simulationcontrol
+    time_steps = 2000,                               #initial time steps, changes towards dtmax     
+    step_size = 0.001,                               #seconds
+    dtmin = 0,
+    dtmax = 0.001,                                   #max timestepsize
+
+    #loadcontroller
+    interpolate = 'LINEAR')                          #can be'STEP',  'LINEAR' or 'SMOOTH'
+    
+    #additional FEBio parameters can be changed in febioxml.py if needed
 
 #Meshing parameters
 max_retry = 2
@@ -328,7 +361,7 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
     #----------------------------------------------------------------------------------------------------------------------------
 
     #Create a solver compatible file based on the 3D-mesh and meshing parameters
-    feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_mapped, file_dir, output_folder)
+    feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_mapped, file_dir, output_folder, FEBio_parameters)
 
     i += 1
 
@@ -353,8 +386,8 @@ for sim in sorted(output_list):
     #Run FEBio
     sim_folder = osp.join(output_dir, sim)
     #Use the current
-    FEBio_inputfile = osp.join(sim_folder, r'simulation.feb')
     try:
+        FEBio_inputfile = osp.join(sim_folder, r'simulation.feb')
         subprocess.run([FEBio_path, FEBio_inputfile], check = True)
     except:
         continue
