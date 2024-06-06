@@ -104,6 +104,10 @@ intp_options = {
 #Plotting boolean, when True: code generates intermediate plots of workflow
 show_plot = True
 
+#--------------------------------------------------------------------------------------------------------------------------
+# End of setup
+#--------------------------------------------------------------------------------------------------------------------------
+
 #Create file environment before looping
 #Get directory of main_workflow file
 file_dir = osp.dirname(osp.realpath(__file__))  
