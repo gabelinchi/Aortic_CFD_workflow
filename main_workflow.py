@@ -156,7 +156,7 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
     combined.clear_data()
     print('Meshes succesfully combined')
 
-    #Plot result of mesh combining. When edgetest gives an error, the structure has dublicate faces/nodes
+    #Plot result of mesh combining.
     if show_plot:
         plt = pv.Plotter()
         plt.add_mesh(combined, style='wireframe')
@@ -168,26 +168,42 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
 
     #Run remesh (takes predetermined internally defined file path as input, DON'T CHANGE)
     combined_remeshed = remesh.remesh_edge_detect(osp.join(temp_dir, r'combined_mesh.mesh'), osp.join(temp_dir, r'combined_mmg.mesh'), temp_dir, mmg_parameters, plot=show_plot)
+    
     #triangulation step to make sure Tetgen only gets triangles as input
     combined_remeshed = combined_remeshed.extract_surface().triangulate()
 
     #Report quality
     report_text_2D = quality_control.meshreport(combined_remeshed, 'Surface mesh quality report')[1]
 
-    #Make an initial 3D mesh from the combined mesh using TetGen
-    combined_remeshed = combined_remeshed
-    try:
-        tetmesh = volume_mesh.tetgen(combined_remeshed, tetgen_parameters, plot=show_plot)
-    except:
-        print('Non-closed surface due to initial geometry error, perform retry')
-        retry += 1
+    #Check mesh validity
+    if not combined_remeshed.is_manifold:
         if retry < max_retry:
+            print('Non-manifold surface due to initial geometry error, perform retry')
+            retry += 1
+        else: 
             print('Terminating, unable to create 3D mesh')
             print('See log files for quality rapport')
             log_folder = osp.join(file_dir, r'log\failed')
             ut.save_string_to_file(report_text_2D, osp.join(log_folder, f'Qualityreport_failed_geometry_{input_list[i]}'))
             i += 1
+            retry = 0
+        continue
+
+    #Make an initial 3D mesh from the combined mesh using TetGen
+    combined_remeshed = combined_remeshed
+    try:
+        tetmesh = volume_mesh.tetgen(combined_remeshed, tetgen_parameters, plot=show_plot)
+    except:
+        retry += 1
+        if retry > max_retry:
+            print('Terminating, unable to create 3D mesh')
+            print('See log files for quality rapport')
+            log_folder = osp.join(file_dir, r'log\failed')
+            ut.save_string_to_file(report_text_2D, osp.join(log_folder, f'Qualityreport_failed_geometry_{input_list[i]}'))
+            i += 1
+            retry = 0
             continue
+        print('Non-manifold surface due to initial geometry error or other tetgen error, perform retry')
         continue
 
     #Plot bisection
@@ -253,6 +269,7 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
         log_folder = osp.join(file_dir, r'log\failed')
         ut.save_string_to_file(report_text, osp.join(log_folder, f'Qualityreport_failed_geometry_{input_list[i]}'))
         i += 1
+        retry = 0
         continue
     else:
         print('Quality is sufficient')
@@ -271,6 +288,14 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
     #Detect the surfaces of the 3D mesh whilst keeping the original ID's, if there is a seed delivered
     if len(seeds) > 0:
         surface_identification = id.identify_surfaces(tetmesh, id_angle, seeds, show_plot)
+
+    #Check if three surfaces are id'ed
+    num_surfaces = len(surface_identification)
+    if num_surfaces != 3:
+        print('Incorrect number of surfaces found (',num_surfaces,') , skipping geometry')
+        i += 1
+        retry = 0
+        continue
 
     #Seperate the indentified surfaces in inlet/outlet/wall
     id_inlet = surface_identification[0]
