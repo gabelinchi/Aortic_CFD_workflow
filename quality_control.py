@@ -21,7 +21,27 @@ def meshreport(mesh, text):
     print('max:', aspect.max())
     print('avg:', aspect.mean())
     print('--------------------------------------------------------------')
-    return{'jac':jac,'aspect':aspect, 'points':num_points, 'cells':num_cells}
+    report = {'jac':jac,'aspect':aspect, 'points':num_points, 'cells':num_cells} 
+
+    #Create report text for log files
+    report_text = '''
+    --------------------------------------------------------------
+    {0}
+    num points: {1}
+    num_cells: {2}
+    Mesh quality (mean scaled jacobian)
+    min: {3}
+    max: {4}
+    avg: {5}
+    Mesh quality (aspect ratio)
+    min: {6}
+    max: {7}
+    avg: {8}
+    --------------------------------------------------------------
+    '''.format(text, num_points, num_cells, jac.min(), jac.max(), jac.mean(), aspect.min(), aspect.max(), aspect.mean())
+
+
+    return report, report_text
 
 def clip_plot(mesh, text):
     # Plots a geometry clipped along the z axis to show the inside mesh

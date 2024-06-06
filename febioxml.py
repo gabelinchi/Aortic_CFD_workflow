@@ -9,36 +9,24 @@ import tetgen as tet
 import xml.etree.ElementTree as ET
 import subprocess
 
-def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
-    #constants:
-    T = 4
-    P = 0
-    R = 8.31446
-    Fc = 96485.3
-
-    #fluidconstants
-    materialtype = 'fluid'
-    density = 1000
-    k = 2200000                                     #bulkmodulus
-    viscoustype = "Newtonian fluid"
-    kappa = 1
-    mu = 0.056
+def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_dir, output_dir, FEBio_parameters):
+    #-------------------------------------------------------------------------------------------------------------------------
+    # Inputs
+    # ------------------------------------------------------------------------------------------------------------------------
+    
+    #-------------------------------------------------------------------------------------------------------------------------
+    # Inputs
+    # ------------------------------------------------------------------------------------------------------------------------
+    
+    #additional FEBio parameters
 
     #Boundarycondition zerofluidvelocity
-    zerofluidvelocity_x = True
+    zerofluidvelocity_x = True                      #no flow on the wall edge in all directions
     zerofluidvelocity_y = True
     zerofluidvelocity_z = True
 
-    #Loads
-    velocity = -1                          #negative want moet aorta in, normals staan mesh uit (naar buiten)
-    prescribe_nodal_velocities = True
-    parabolic = True
-    prescribe_rim_pressure= True
-
     #SimulationControl
     analysis = 'DYNAMIC'
-    time_steps = 600                         #initial time steps, changes towards dtmax     
-    step_size = 0.001                        #seconds
     plot_zero_state = 0
     plot_range = 0,-1
     plot_level = 'PLOT_MAJOR_ITRS'
@@ -47,10 +35,8 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     output_stride = 1
     adaptor_re_solve = 1
     time_stepper_type="default"
-    max_retries = 10
+    max_retries = 5                        # make smaller for quicker converge
     opt_iter = 25
-    dtmin = 0
-    dtmax = 0.05                           #max timestepsize
     aggressiveness = 0
     cutback = 0.5
     dtforce = 0 
@@ -85,8 +71,14 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     cycle_buffer = 1
     cmax = 100000
 
+    #loadcontroller
+    
+    
+    extend = "CONSTANT"                     #sws niet nodig, overal gedefineerd
 
-
+    #-------------------------------------------------------------------------------------------------------------------------
+    # Adding nodes and elements
+    # ------------------------------------------------------------------------------------------------------------------------
     #make nodes and elements arrays from mesh.vtk
     polydata = tetmesh 
     Meshnodes = polydata.points * 0.001                         #convert to meters
@@ -104,7 +96,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     WallNodes = WallNodes + 1
 
     #get XML file
-    tree = ET.parse(osp.join(file_dir, r'fundering met loadcontroller.feb'))
+    tree = ET.parse(osp.join(file_dir, r'template_xml.feb'))
     root = tree.getroot()
 
     print('emptying .xml')
@@ -123,6 +115,8 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
         Elem.remove(element)                       # Remove collected elements
 
     print('emptying surfaces')
+
+
     Surface = root.find("./Mesh/Surface[@name='FluidNormalVelocity1']")
     # If Surface element is found, remove all the tri3 elements under it
     if Surface is not None:
@@ -143,8 +137,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     if loadcontroller is not None:
         for element in Surface.findall('pt'):
             loadcontroller.remove(element)
-    else:
-        print('loadcontroller not found')
+
     
     print('emptied.xml')
 
@@ -192,30 +185,83 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     else:
         print("Element 'Mesh/Elements' not found.") 
 
-    #create loadcurve
-    loadcurve_list = []
-    for i in range(time_steps):
-        t = i *step_size
-        f = np.sin(t)
-        loadcurve_list.append([t, f])
+    
 
-    loader_list = []
-    for i, array in enumerate(loadcurve_list):
-        element_name = "pt"
-        element = ET.Element(element_name)
-        element.text = ','.join(map(str, array))   #add array as a string
-        if i > 0:
-            loader_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
-        loader_list.append(element)
+    #-------------------------------------------------------------------------------------------------------------------------
+    # Add loadcurves
+    # ------------------------------------------------------------------------------------------------------------------------
+    #amplification factor of the load as loadcurve
+    def loadcurve(interpolate,extend, time_steps, step_size,cycle, root, t_start, t_end, n):
+        loadcurve_list = np.zeros((time_steps, 2))
+        
+        dt = t_end-t_start
+        if n == 1:
+            for i in range(time_steps):
+                t = (i) * step_size                                       #timepoint at each step
+                if (t % cycle) < (t_start-dt):                                         #amplification factor = 0 for time before t start
+                    f = 0
+                elif (t_start+cycle-dt)<= (t % cycle) < cycle:                              #amplification factor = 1 for time between t start and t end
+                    f = ((t % cycle)-t_start-cycle+dt)/dt
+                elif t_start<= (t % cycle) < (t_start+dt):                              #amplification factor = 1 for time between t start and t end
+                    f = (-(t % cycle)+t_start+dt)/dt
+                else:                                                   #amplification factor = 0 for time after t end
+                    f = 0
+                loadcurve_list[i] = np.array([t, f])                         #add function f(t) as points
 
-    # Append XML elements to the 'Mesh/Surface' element
-    Element = root.find('.//LoadData/load_controller/points')
-    if Element is not None:
-        for pt in loader_list:
-            Element.append(pt)                   #add the nodes to the element <Elements>
-        loader_list[-1].tail = '\n\t\t'              #get the closing </Elements> in the right tree
-    else:
-        print("loadcontroller not found") 
+        else: 
+            for i in range(time_steps):
+                t = (i) * step_size                                       #timepoint at each step
+                if (t % cycle) < (t_start-dt):                                         #amplification factor = 0 for time before t start
+                    f = 0
+                elif (t_start-dt)<= (t % cycle) < t_start:                              #amplification factor = 1 for time between t start and t end
+                    f = ((t % cycle)-t_start+dt)/dt
+                elif t_start<= (t % cycle) < (t_start+dt):                              #amplification factor = 1 for time between t start and t end
+                    f = (-(t % cycle)+t_start+dt)/dt
+                else:                                                   #amplification factor = 0 for time after t end
+                    f = 0
+                loadcurve_list[i] = np.array([t, f])                         #add function f(t) as points
+
+        load_main = root.find('.//LoadData')
+        new_controller = ET.SubElement(load_main, 'load_controller')
+        new_controller.set('id', f"{n}")
+        new_controller.set('type', "loadcurve")
+        new_controller.tail = '\n\t\t\t'
+
+        interpolate_lc = ET.SubElement(new_controller, 'interpolate')
+        interpolate_lc.text = str(interpolate)
+        interpolate_lc.tail = '\n\t\t\t'
+
+        extend_lc = ET.SubElement(new_controller, 'extend')
+        extend_lc.text = str(extend)
+        extend_lc.tail = '\n\t\t\t'
+
+        points_lc = ET.SubElement(new_controller, 'points')
+        points_lc.tail = '\n\t\t\t'
+
+            
+        load_controller = root.find(f'.//LoadData/load_controller[@id="{n}"]')
+        points_element = load_controller.find('points')
+        
+        for array in loadcurve_list:                     # Create XML elements for each point in the load curve:
+            element_name = "pt"
+            element = ET.Element(element_name)              #make the string an .xml element
+            t, f = array
+            element.text = str(t) + ',' + str(f)
+            element.tail= '\n\t\t\t\t'
+            points_element.append(element)                  #add points to the xml
+
+    #one loadcurve for each velocityprofile snapshot:
+    
+    cycle = 60/FEBio_parameters['hr']       #time in seconds
+    profiles = len(velocity_profile)
+    for i in range(profiles):
+        loadcurve(FEBio_parameters['interpolate'], extend, FEBio_parameters['time_steps'], FEBio_parameters['step_size'],cycle, root, (cycle/profiles)*i, (cycle/profiles)*(i+1), i +1)
+    
+    print('finished loadcontroller')
+
+    #-------------------------------------------------------------------------------------------------------------------------
+    # Boundary conditions
+    # ------------------------------------------------------------------------------------------------------------------------
 
     # Add boundary conditions to the file as XML elements
     BC1_list = []
@@ -228,7 +274,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
             BC1_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
         BC1_list.append(element)
 
-    # Append XML elements to the 'Mesh/Surface' element
+    # Append XML elements to the ZeroFluidVelocity (=wall) surface
     Element = root.find('.//Mesh/Surface[@name = "ZeroFluidVelocity1"]')
     if Element is not None:
         for tri3 in BC1_list:
@@ -248,7 +294,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
             BC2_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
         BC2_list.append(element)
 
-    # Append XML elements to the 'Mesh/Surface' element
+    # Append XML elements to the ZeroFluidDilatation (=outlet) surface
     Element = root.find('.//Mesh/Surface[@name = "ZeroFluidDilatation1"]')
     if Element is not None:
         for tri3 in BC2_list:
@@ -269,7 +315,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
             load_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
         load_list.append(element)
 
-    # Append XML elements to the 'Mesh/Surface' element
+    # Append XML elements to the FluidNormalVelocity surface (=inlet) element
     Element = root.find('.//Mesh/Surface[@name = "FluidNormalVelocity1"]')
     if Element is not None:
         for tri3 in load_list:
@@ -279,9 +325,67 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
         print("Element load not found.") 
     print('added nodes')
 
-     
+    #-------------------------------------------------------------------------------------------------------------------------
+    # Velocity profile
+    # ------------------------------------------------------------------------------------------------------------------------
+
+    def vel_profile_adding(velocity_profile, frame_number):
+        # Add velocity profile to the file as XML elements
+        profile_list = []
+        for i, array in enumerate(velocity_profile):
+            element_name = "face"
+            element = ET.Element(element_name)
+            element.text = ','.join(map(str, array))   #add array as a string
+            element.set('lid', str(i+1))                #set element id (python counts from 0, FEBio from 1)    
+            if i > 0:
+                profile_list[-1].tail = '\n\t\t\t'        #get the elements in the right tree with tabs
+            profile_list.append(element)
+        # Append XML elements to the 'MeshData/SurfaceData' element
+
+        profile_main = root.find('.//MeshData')
+        new_profile = ET.SubElement(profile_main, 'SurfaceData')
+        profile_name = "velocityprofile" + str(frame_number)
+        new_profile.set('name', profile_name)
+        new_profile.set('data_type', "vec3")
+        new_profile.set('surface', "FluidNormalVelocity1")
+        new_profile.tail = '\n\t\t\t'
 
 
+        Element = root.find(f'.//MeshData/SurfaceData[@name ="{profile_name}"]')
+        if Element is not None:
+            for vel in profile_list:
+                Element.append(vel)                   #add the nodes to the element <Elements>
+            profile_list[-1].tail = '\n\t\t'              #get the closing </Elements> in the right tree
+        else:
+            print("Element SurfaceData[@name = 'velocityprofile'] not found.")
+    
+    for i in range(len(velocity_profile)):
+        vel_profile_adding(velocity_profile[i], i + 1)
+
+
+    print('added velocity profile')
+
+    #-------------------------------------------------------------------------------------------------------------------------
+    # Add loads
+    # ------------------------------------------------------------------------------------------------------------------------
+    def add_loads(num_frames):
+        load_main = root.find('.//Loads')
+        new_load = ET.SubElement(load_main, 'surface_load')
+        new_load.set('surface', "FluidNormalVelocity1")
+        new_load.set('type', "fluid velocity")
+        new_load.tail = '\n\t\t\t'
+
+        velocity_l = ET.SubElement(new_load, 'velocity')
+        velocity_l.set('type', 'map')
+        velocity_l.set('lc', str(num_frames))
+        velocity_l.text = 'velocityprofile' + str(num_frames)
+        velocity_l.tail = '\n\t\t\t\t'
+
+    for i in range(len(velocity_profile)):          #for the amount of velocity profiles, add different loads
+        add_loads(i + 1)
+    #-------------------------------------------------------------------------------------------------------------------------
+    # Edit constants
+    # ------------------------------------------------------------------------------------------------------------------------
 
     #Edit constants
     def Parent1(parent, variable, value):
@@ -321,10 +425,11 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
         else:
                 print(f"Element '{variable}' under '{parent}' not found.")
         return
+
     #single parent
     Parent1('Control', 'analysis', str(analysis))
-    Parent1('Control', 'time_steps', str(time_steps))
-    Parent1('Control', 'step_size', str(step_size))
+    Parent1('Control', 'time_steps', str(FEBio_parameters['time_steps']))
+    Parent1('Control', 'step_size', str(FEBio_parameters['step_size']))
     Parent1('Control', 'plot_zero_state', str(plot_zero_state))
 
     plot_range_str = ','.join(str(x) for x in plot_range)
@@ -339,19 +444,18 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     #double parent
     Parent2('Control', 'time_stepper', 'max_retries', str(max_retries))
     Parent2('Control', 'time_stepper', 'opt_iter', str(opt_iter))
-    Parent2('Control', 'time_stepper', 'dtmin', str(dtmin))
+    Parent2('Control', 'time_stepper', 'dtmin', str(FEBio_parameters['dtmin']))
+    Parent2('Control', 'time_stepper', 'dtmax', str(FEBio_parameters['dtmax']))
     Parent2('Control', 'time_stepper', 'aggressiveness', str(aggressiveness))
     Parent2('Control', 'time_stepper', 'cutback', str(cutback))
     Parent2('Control', 'time_stepper', 'dtforce', str(dtforce))
     Parent2('Control', 'time_stepper', 'max_retries', str(max_retries))
     Parent2('Control', 'time_stepper', 'opt_iter', str(opt_iter))
-    Parent2('Control', 'time_stepper', 'dtmin', str(dtmin))
-    Parent2('Control', 'time_stepper', 'dtmax', str(dtmax))
     Parent2('Control', 'time_stepper', 'aggressiveness', str(aggressiveness))
     Parent2('Control', 'time_stepper', 'cutback', str(cutback))
     Parent2('Control', 'time_stepper', 'dtforce', str(dtforce))
-    Parent2('Material', 'material', 'density', str(density))
-    Parent2('Material', 'material', 'k', str(k))
+    Parent2('Material', 'material', 'density', str(FEBio_parameters['density']))
+    Parent2('Material', 'material', 'k', str(FEBio_parameters['k']))
 
     Parent2('Control','solver', 'symmetric_stiffness', str(symmetric_stiffness))
     Parent2('Control', 'solver','equation_scheme', str(equation_scheme))
@@ -404,27 +508,61 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, file_dir, temp_dir):
     Parent2('Boundary', 'bc', 'wy_dof', str(int(zerofluidvelocity_y)))
     Parent2('Boundary', 'bc', 'wz_dof', str(int(zerofluidvelocity_z)))
 
-    Parent2('Loads', 'surface_load', 'velocity', str(velocity))
-    Parent2('Loads', 'surface_load', 'prescribe_nodal_velocities', str(int(prescribe_nodal_velocities)))
-    Parent2('Loads', 'surface_load', 'parabolic', str(int(parabolic)))
-    Parent2('Loads', 'surface_load', 'parabolic', str(int(prescribe_rim_pressure)))
-
     #triple parent
-    Parent3('Material', 'material', 'viscous', 'kappa', str(kappa))
-    Parent3('Material', 'material', 'viscous', 'mu', str(mu))
+    Parent3('Material', 'material', 'viscous', 'kappa', str(FEBio_parameters['kappa']))
+    Parent3('Material', 'material', 'viscous', 'mu', str(FEBio_parameters['mu']))
+    Parent3('Control', 'solver', 'qn_method', 'max_ups', str(max_ups))
+    Parent3('Control', 'solver', 'qn_method', 'max_buffer_size', str(max_buffer_size))
+    Parent3('Control', 'solver', 'qn_method', 'cycle_buffer', str(cycle_buffer))
+    Parent3('Control', 'solver', 'qn_method', 'cmax', str(cmax))
 
-    """ timestepper  = root.find('./Control/time_stepper')      #dit moet nog onder step/step1
+    #types
+    timestepper  = root.find('./Control/time_stepper')      
     timestepper.set('type',str(time_stepper_type))
     solver  = root.find('./Control/solver')
     solver.set('type',str(solvertype))
     qnmethod  = root.find('./Control/solver/qn_method')
     qnmethod.set('type',str(qn_method_type))
     material  = root.find('./Material/material')
-    material.set('type',str(materialtype))
+    material.set('type',str(FEBio_parameters['materialtype']))
     viscous  = root.find('./Material/material/viscous')
-    viscous.set('type',str(viscoustype))
-    """
+    viscous.set('type',str(FEBio_parameters['viscoustype']))
+    
+
+    #-------------------------------------------------------------------------------------------------------------------------
+    # Output
+    # ------------------------------------------------------------------------------------------------------------------------
+    def outputs(output):
+        output_main = root.find('.//Output/plotfile[@type="febio"]')
+        new_output = ET.SubElement(output_main, 'var')
+        new_output.set('type', f"{output}")
+        new_output.tail = '\n\t\t'
+        return
+
+    if FEBio_parameters['displacement']==True:
+        outputs('displacement')
+    if FEBio_parameters['fluid_pressure'] == True:
+        outputs('fluid pressure')
+    if FEBio_parameters['nodal_fluid_velocity'] == True:
+        outputs('nodal fluid velocity')
+    if FEBio_parameters['fluid_stress'] == True:
+        outputs('fluid stress')
+    if FEBio_parameters['fluid_velocity'] == True:
+        outputs('fluid velocity')
+    if FEBio_parameters['fluid_acceleration'] == True:
+        outputs('fluid acceleration')
+    if FEBio_parameters['fluid_vorticity'] == True:
+        outputs('fluid vorticity')
+    if FEBio_parameters['fluid_rate_of_deformation'] == True:
+        outputs('fluid rate of deformation')
+    if FEBio_parameters['fluid_dilatation'] == True:
+        outputs('fluid dilatation')
+    if FEBio_parameters['fluid_volume_ratio'] == True:
+        outputs('fluid volume ratio')
+
+
     #create FEBio file
-    tree.write(osp.join(temp_dir, r'simulation.feb'), encoding='ISO-8859-1', xml_declaration=True,)
+   
+    tree.write(osp.join(output_dir, r'simulation.feb'), encoding='ISO-8859-1', xml_declaration=True,)
 
     return

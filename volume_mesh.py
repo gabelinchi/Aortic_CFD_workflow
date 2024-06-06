@@ -100,7 +100,7 @@ def write_sol(mesh, surf, parameters, dir, plot=False):
         plotter.add_text('Initial 3D mesh with local tags')
         plotter.show()
 
-    # Write file
+    # Write .mesh file
     header = 'MeshVersionFormatted \n2\n\nDimension 3\n\nSolAtVertices\n' + str(length) + '\n1 1\n'
     np.savetxt(dir, density.reshape(-1,1), header=header, footer='End', comments='', fmt='%f')
 

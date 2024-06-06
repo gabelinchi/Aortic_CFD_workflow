@@ -125,3 +125,8 @@ def make_spiderweb(perimeter):
         cells = np.hstack((cells, np.full((len(cells), 1), len(points)-1)))
         cells = pad(cells)
         return pv.PolyData(points, cells)
+
+#Save a string to a .txt file
+def save_string_to_file(string, filename):
+    with open(filename, 'w') as file:
+        file.write(string)

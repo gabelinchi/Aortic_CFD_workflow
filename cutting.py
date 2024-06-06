@@ -1,12 +1,17 @@
 import numpy as np
 import pyvista as pv
 import utils as ut
-import cutting_with_vector as cwv
 
 
 #main function that runs the cutter script
 def main_cutter(inlet, wall, plot=False):
+    '''
+    Function that is the main for the cutting of the aorta geometry. It calls centerline, areaselection and cutting functions to perform the cut
+    :arg1 inlet: pyvista Polydata
+    :arg2 wall: pyvista PolyData
 
+    returns pyvista PolyData of the wall after the cut
+    '''
     print('Start cutting')
     #Calculates areas along the centerline of the aorta (only first 40 mm). Also outputs nodes/normals and edge profiles for the final cut and visualisation
     centernodes, centernormals, edgeprofiles, slice_areas = centerline(inlet, wall)
@@ -16,8 +21,9 @@ def main_cutter(inlet, wall, plot=False):
         plt = pv.Plotter()
         plt.add_mesh(wall, style ='wireframe')
         plt.add_points(centernodes, color = 'red')
+        plt.add_text('Centerline for cutting')
         plt.show()
-        edgeprofiles.plot()
+        edgeprofiles.plot(text='IMS cutting steps')
 
     #Calculates the smallest area across the first 40mm of the inlet
     smallest_area, smallest_area_index = areaselection(slice_areas)
@@ -30,12 +36,25 @@ def main_cutter(inlet, wall, plot=False):
     #Final centernode
     center_final = centernodes[smallest_area_index].flatten()
 
-    new_geometry = cwv.cut(center_final, normal_final, wall, plot=plot)
+    new_geometry = cut(center_final, normal_final, wall, plot=plot)
 
     print('Cutting done')    
-    return new_geometry
+    return (new_geometry, center_final)
 
 def centerline(inlet, wall, dist=40, flip_norm=False):
+    '''
+    Function that calculates an approximation of the centerline of the wall geometry
+    Known shortcoming: Function does not automatically end at end of geometry but gives an error when reaching the end
+    :arg1 inlet: pyvista Polydata
+    :arg2 wall: pyvista PolyData
+    :opt arg3: the distance from the inlet at which the function stops calculating
+
+    returns:
+    centernodes: the points of which the centerline is build upon
+    centernormals: the normals in every centernode, perpendicular to the edgeprofiles
+    edgeprofiles: profile from the wall when you cut in the centernode along the centernormal
+    slice_ares: internal area of each edgeprofile (used in areaselection function)
+    '''
     #From the inlet surface mesh extract the boundary edges
     inlet_boundary = inlet.extract_feature_edges(boundary_edges=True, non_manifold_edges=False, manifold_edges=False, feature_edges=False)
 
@@ -74,7 +93,7 @@ def centerline(inlet, wall, dist=40, flip_norm=False):
         inter_center = np.add(center, normal)
         #Use this new point and the previous directional vector to make a cut of the wall mesh
 
-        inter_profile = cwv.get_clip_perimeter(inter_center, normal, wall) #Extract the edge profile (temporary) and isolate the profile (with connectivity) which we want to continue working with
+        inter_profile = get_clip_perimeter(inter_center, normal, wall) #Extract the edge profile (temporary) and isolate the profile (with connectivity) which we want to continue working with
         #From the isolated profile (temporary), calculate the new center point
         inter_profile_points = inter_profile.points
         new_center = inter_profile_points.mean(0)    
@@ -84,7 +103,7 @@ def centerline(inlet, wall, dist=40, flip_norm=False):
         new_normal = ut.normalise(np.add(A, B))
 
         #Make a new cut of the wall mesh with the new center point and the new normalised directional vector (also isolate this edgeprofile again)
-        new_profile = cwv.get_clip_perimeter(new_center, new_normal, wall)
+        new_profile = get_clip_perimeter(new_center, new_normal, wall)
 
         #Calculate the area of the new profile
         new_profile_closed = new_profile.delaunay_2d()
@@ -111,6 +130,14 @@ def centerline(inlet, wall, dist=40, flip_norm=False):
     return centernodes, centernormals, edgeprofiles, slice_areas
 
 def areaselection(areas):
+    '''
+    Function that selects the minimal area after the aortic root along the centerline
+    :arg1 areas: all areas of the slices along the centerline
+
+    returns
+    smallest area: the minimal area after the aortic root
+    smallest area index: index of smallest area in areas
+    '''
     # Find the indices where the tube transitions from wide to narrow and narrow to wide
     diff_areas = np.diff(areas)
     transition_indices = np.where(np.logical_or(diff_areas < 0, diff_areas == 0))[0]
@@ -121,8 +148,31 @@ def areaselection(areas):
     #Select the segments that have a narrow part and are larger than 1. This result in multiple arrays that go from a smaller to a larger area
     narrow_segments = [segment for segment in area_segments if len(segment) > 1 and segment[0] < segment[-1]]
 
-    #Select the smallest area from the second small segment. This should be the constriction after the aortic root (might want to find a smarter solution for this, but for now this works)
-    smallest_area = min(narrow_segments[1]) #Gives out of bound error when there is no constriction
+    #Select the smallest area from the second small segment. This should be the constriction after the aortic root
+    if len(narrow_segments) > 1:
+        smallest_area = min(narrow_segments[1]) #Gives out of bound error when there is no constriction
+    else:
+        counter = 0 
+        window_size = 3
+        moving_averages = []
+
+        while counter < len(diff_areas) - window_size + 1:
+   
+            # Store elements from i to i+window_size
+            # in list to get the current window
+            window = diff_areas[counter : counter + window_size]
+        
+            # Calculate the average of current window
+            window_average = round(sum(window) / window_size, 2)
+            
+            # Store the average of current
+            # window in moving average list
+            moving_averages.append(window_average)
+            
+            # Shift window to right by one position
+            counter += 1
+        transition_index = np.argmin(moving_averages)
+        smallest_area = areas[transition_index]
 
     #Grab the index of the smallest_area
     smallest_index_calc = np.where(smallest_area == areas)
@@ -155,7 +205,70 @@ def post_cutter(inlet, wall, plot=False, flip_norm=False):
 
     #Final centernode
     center_final = centernodes[horiz_index].flatten()
-    new_geometry = cwv.cut(center_final, -normal_final, wall, plot=plot)
+    new_geometry = cut(center_final, -normal_final, wall, plot=plot)
 
     print('Cutting done')    
     return new_geometry
+
+def cut(point, normal, wall, plot=False):
+    """
+    Function that cuts a vessel geometry along a plane defined by a point & vector, and keeps all regions upstream
+    of the point.
+    :arg1 point: numpy array, xyz
+    :arg2 normal: vector
+    :arg3 wall: pyvista PolyData
+
+    returns clipped geometry as PolyData
+    """
+    # Clip geometry
+    reg1, reg2 = wall.clip(normal=normal, origin=point, return_clipped=True) #reg2 is in direction of vector
+
+    if plot==True:
+        plt = pv.Plotter()
+        plt.add_mesh(reg1, style= 'wireframe', color='green')
+        plt.add_mesh(reg2, style= 'wireframe', color='red')
+        plt.add_points(point)
+        plt.add_text('Clip plane for cutting')
+        plt.show()
+
+    # Extract geometry to keep from reg2
+    reg2 = reg2.connectivity('all')
+    keep_id = reg2.point_data['RegionId'][reg2.find_closest_point(point)]
+    reg2 = reg2.extract_cells(np.where(reg2.cell_data['RegionId'] == keep_id)[0])
+    
+    # Extract geometry to keep from reg1
+    reg1 = reg1.connectivity('all')
+    del_id = reg1.point_data['RegionId'][reg1.find_closest_point(point)]
+    reg1 = reg1.extract_cells(np.where(reg1.cell_data['RegionId'] != del_id)[0])
+
+    # Recombine regions
+    clipped = reg1.merge(reg2).clean()
+    #clipped.clear_data() #Commented to fix postproc, breaks main
+
+    if plot==True:
+        clipped.plot(text='Cut geometry')
+    return(clipped)
+
+def get_clip_perimeter(point, normal, wall, plot=False):
+    '''
+    Function that cuts a vessel geometry along a plane defined by a point & vector, and returns the resulting perimeter
+    :arg1 point: numpy array, xyz
+    :arg2 normal: vector
+    :arg3 wall: pyvista PolyData
+
+    returns pyvista PolyData of the perimeter resulting from the cut
+    '''
+    # Clip geometry
+    normal=np.array(normal)
+    clipped = wall.clip(normal=(normal * -1), origin=point) 
+
+    # Extract edges
+    edges = clipped.extract_feature_edges(boundary_edges=True, non_manifold_edges=False, manifold_edges=False, feature_edges=False)
+
+    # Extract edge closest to point
+    edge = edges.connectivity('closest', point)
+
+    if plot==True:
+        edges.plot()
+        edge.plot()
+    return(edge)
