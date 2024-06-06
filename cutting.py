@@ -44,6 +44,7 @@ def main_cutter(inlet, wall, plot=False):
 def centerline(inlet, wall, dist=40, flip_norm=False):
     '''
     Function that calculates an approximation of the centerline of the wall geometry
+    Known shortcoming: Function does not automatically end at end of geometry but gives an error when reaching the end
     :arg1 inlet: pyvista Polydata
     :arg2 wall: pyvista PolyData
     :opt arg3: the distance from the inlet at which the function stops calculating
