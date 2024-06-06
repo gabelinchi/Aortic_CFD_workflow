@@ -136,8 +136,6 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
 
     print('import of geometry done')
 
-
-
     #--------------------------------------------------------------------------------------------------------------------------
     # 3D-meshing algorithm
     #--------------------------------------------------------------------------------------------------------------------------
@@ -292,7 +290,11 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
     #Check if three surfaces are id'ed
     num_surfaces = len(surface_identification)
     if num_surfaces != 3:
-        print('Incorrect number of surfaces found (',num_surfaces,') , skipping geometry')
+        reportstring = f'Incorrect number of surfaces found ({num_surfaces}) , skipped geometry'
+        print(reportstring)
+        print('See log files for error')
+        log_folder = osp.join(file_dir, r'log\failed')
+        ut.save_string_to_file(reportstring, osp.join(log_folder, f'Logreport_failed_geometry_{input_list[i]}'))
         i += 1
         retry = 0
         continue
