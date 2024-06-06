@@ -9,7 +9,7 @@ import tetgen as tet
 import xml.etree.ElementTree as ET
 import subprocess
 
-def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_dir, output_dir):
+def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_dir, output_dir, FEBio_parameters):
     #-------------------------------------------------------------------------------------------------------------------------
     # Inputs
     # ------------------------------------------------------------------------------------------------------------------------
@@ -17,37 +17,16 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     #-------------------------------------------------------------------------------------------------------------------------
     # Inputs
     # ------------------------------------------------------------------------------------------------------------------------
-    hr = 60             #heartrate in bpm for cycle time
-
-    #outputs
-    output_displacement = False
-    output_fluid_pressure = False
-    output_nodal_fluid_velocity = False
-    output_fluid_stress = True
-    output_fluid_velocity = True
-    output_fluid_acceleration = False
-    output_fluid_vorticity = False
-    output_fluid_rate_of_deformation = False
-    output_fluid_dilatation = False
-    output_fluid_volume_ratio = False
-
-    #fluidconstants
-    materialtype = 'fluid'
-    density = 1000
-    k = 2200000                                     #bulkmodulus
-    viscoustype = "Newtonian fluid"
-    kappa = 1
-    mu = 0.056
+    
+    #additional FEBio parameters
 
     #Boundarycondition zerofluidvelocity
-    zerofluidvelocity_x = True
+    zerofluidvelocity_x = True                      #no flow on the wall edge in all directions
     zerofluidvelocity_y = True
     zerofluidvelocity_z = True
 
     #SimulationControl
     analysis = 'DYNAMIC'
-    time_steps = 400                         #initial time steps, changes towards dtmax     
-    step_size = 0.005                        #seconds
     plot_zero_state = 0
     plot_range = 0,-1
     plot_level = 'PLOT_MAJOR_ITRS'
@@ -58,8 +37,6 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     time_stepper_type="default"
     max_retries = 5                        # make smaller for quicker converge
     opt_iter = 25
-    dtmin = 0
-    dtmax = 0.05                           #max timestepsize
     aggressiveness = 0
     cutback = 0.5
     dtforce = 0 
@@ -96,7 +73,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
 
     #loadcontroller
     
-    interpolate = 'LINEAR'                    #can be'STEP',  'LINEAR' or 'SMOOTH'
+    
     extend = "CONSTANT"                     #sws niet nodig, overal gedefineerd
 
     #-------------------------------------------------------------------------------------------------------------------------
@@ -275,10 +252,10 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
 
     #one loadcurve for each velocityprofile snapshot:
     
-    cycle = hr/60       #time in seconds
+    cycle = 60/FEBio_parameters['hr']       #time in seconds
     profiles = len(velocity_profile)
     for i in range(profiles):
-        loadcurve(interpolate, extend, time_steps, step_size,cycle, root, (cycle/profiles)*i, (cycle/profiles)*(i+1), i +1)
+        loadcurve(FEBio_parameters['interpolate'], extend, FEBio_parameters['time_steps'], FEBio_parameters['step_size'],cycle, root, (cycle/profiles)*i, (cycle/profiles)*(i+1), i +1)
     
     print('finished loadcontroller')
 
@@ -451,8 +428,8 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
 
     #single parent
     Parent1('Control', 'analysis', str(analysis))
-    Parent1('Control', 'time_steps', str(time_steps))
-    Parent1('Control', 'step_size', str(step_size))
+    Parent1('Control', 'time_steps', str(FEBio_parameters['time_steps']))
+    Parent1('Control', 'step_size', str(FEBio_parameters['step_size']))
     Parent1('Control', 'plot_zero_state', str(plot_zero_state))
 
     plot_range_str = ','.join(str(x) for x in plot_range)
@@ -467,20 +444,18 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     #double parent
     Parent2('Control', 'time_stepper', 'max_retries', str(max_retries))
     Parent2('Control', 'time_stepper', 'opt_iter', str(opt_iter))
-    Parent2('Control', 'time_stepper', 'dtmin', str(dtmin))
-    Parent2('Control', 'time_stepper', 'dtmax', str(dtmax))
+    Parent2('Control', 'time_stepper', 'dtmin', str(FEBio_parameters['dtmin']))
+    Parent2('Control', 'time_stepper', 'dtmax', str(FEBio_parameters['dtmax']))
     Parent2('Control', 'time_stepper', 'aggressiveness', str(aggressiveness))
     Parent2('Control', 'time_stepper', 'cutback', str(cutback))
     Parent2('Control', 'time_stepper', 'dtforce', str(dtforce))
     Parent2('Control', 'time_stepper', 'max_retries', str(max_retries))
     Parent2('Control', 'time_stepper', 'opt_iter', str(opt_iter))
-    Parent2('Control', 'time_stepper', 'dtmin', str(dtmin))
-    Parent2('Control', 'time_stepper', 'dtmax', str(dtmax))
     Parent2('Control', 'time_stepper', 'aggressiveness', str(aggressiveness))
     Parent2('Control', 'time_stepper', 'cutback', str(cutback))
     Parent2('Control', 'time_stepper', 'dtforce', str(dtforce))
-    Parent2('Material', 'material', 'density', str(density))
-    Parent2('Material', 'material', 'k', str(k))
+    Parent2('Material', 'material', 'density', str(FEBio_parameters['density']))
+    Parent2('Material', 'material', 'k', str(FEBio_parameters['k']))
 
     Parent2('Control','solver', 'symmetric_stiffness', str(symmetric_stiffness))
     Parent2('Control', 'solver','equation_scheme', str(equation_scheme))
@@ -534,8 +509,8 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     Parent2('Boundary', 'bc', 'wz_dof', str(int(zerofluidvelocity_z)))
 
     #triple parent
-    Parent3('Material', 'material', 'viscous', 'kappa', str(kappa))
-    Parent3('Material', 'material', 'viscous', 'mu', str(mu))
+    Parent3('Material', 'material', 'viscous', 'kappa', str(FEBio_parameters['kappa']))
+    Parent3('Material', 'material', 'viscous', 'mu', str(FEBio_parameters['mu']))
     Parent3('Control', 'solver', 'qn_method', 'max_ups', str(max_ups))
     Parent3('Control', 'solver', 'qn_method', 'max_buffer_size', str(max_buffer_size))
     Parent3('Control', 'solver', 'qn_method', 'cycle_buffer', str(cycle_buffer))
@@ -549,9 +524,9 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     qnmethod  = root.find('./Control/solver/qn_method')
     qnmethod.set('type',str(qn_method_type))
     material  = root.find('./Material/material')
-    material.set('type',str(materialtype))
+    material.set('type',str(FEBio_parameters['materialtype']))
     viscous  = root.find('./Material/material/viscous')
-    viscous.set('type',str(viscoustype))
+    viscous.set('type',str(FEBio_parameters['viscoustype']))
     
 
     #-------------------------------------------------------------------------------------------------------------------------
@@ -564,29 +539,30 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
         new_output.tail = '\n\t\t'
         return
 
-    if output_displacement==True:
+    if FEBio_parameters['displacement']==True:
         outputs('displacement')
-    if output_fluid_pressure == True:
+    if FEBio_parameters['fluid_pressure'] == True:
         outputs('fluid pressure')
-    if output_nodal_fluid_velocity == True:
+    if FEBio_parameters['nodal_fluid_velocity'] == True:
         outputs('nodal fluid velocity')
-    if output_fluid_stress == True:
+    if FEBio_parameters['fluid_stress'] == True:
         outputs('fluid stress')
-    if output_fluid_velocity == True:
+    if FEBio_parameters['fluid_velocity'] == True:
         outputs('fluid velocity')
-    if output_fluid_acceleration == True:
+    if FEBio_parameters['fluid_acceleration'] == True:
         outputs('fluid acceleration')
-    if output_fluid_vorticity == True:
+    if FEBio_parameters['fluid_vorticity'] == True:
         outputs('fluid vorticity')
-    if output_fluid_rate_of_deformation == True:
+    if FEBio_parameters['fluid_rate_of_deformation'] == True:
         outputs('fluid rate of deformation')
-    if output_fluid_dilatation == True:
+    if FEBio_parameters['fluid_dilatation'] == True:
         outputs('fluid dilatation')
-    if output_fluid_volume_ratio == True:
+    if FEBio_parameters['fluid_volume_ratio'] == True:
         outputs('fluid volume ratio')
 
 
     #create FEBio file
+   
     tree.write(osp.join(output_dir, r'simulation.feb'), encoding='ISO-8859-1', xml_declaration=True,)
 
     return
