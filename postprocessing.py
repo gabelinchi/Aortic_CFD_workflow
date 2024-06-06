@@ -102,4 +102,4 @@ def wss_simple(maxrange=50):
         block[i].plot(scalars='wss', clim=[0,maxrange], text=filenames[i], scalar_bar_args={'title': 'wss [Pa]'})
     return
 
-wss_simple(50)
+wss_simple(100)
