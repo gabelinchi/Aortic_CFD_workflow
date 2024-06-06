@@ -86,14 +86,14 @@ def wss_simple(maxrange=50):
         for i in range(len(lengths)):
             lengths[i] = split_surf[i].number_of_points
         wall_index = np.argmax(lengths, axis=0)
-        wall = split_surf[int(wall_index)]
+        wall = split_surf[int(wall_index)].extract_surface()
 
         # Add array containing max. wss
         tensors = wall['fluid_stress'].reshape((wall['fluid_stress'].shape[0],3,3))
-        eig = np.linalg.eigvals(tensors)
-        min = eig.min(axis=1)
-        max = eig.max(axis=1)
-        wss = (max-min)/2
+        wall = wall.compute_normals(point_normals=False)
+        Tn = np.einsum('ijk,ik->ij', tensors, wall['Normals']) # Matrices * normals
+        sigma_n = np.sum(Tn * wall['Normals'], axis=1) # Stress vectors * normals
+        wss = ((np.linalg.norm(Tn, axis=1)**2 - sigma_n**2))**0.5 # Extremely small values produce rounding errors
         wall['wss']=wss
         block.append(wall)
     
@@ -102,4 +102,4 @@ def wss_simple(maxrange=50):
         block[i].plot(scalars='wss', clim=[0,maxrange], text=filenames[i], scalar_bar_args={'title': 'wss [Pa]'})
     return
 
-wss_cut_and_hist(50)
+wss_simple(50)
