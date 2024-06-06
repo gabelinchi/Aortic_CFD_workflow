@@ -21,8 +21,9 @@ def main_cutter(inlet, wall, plot=False):
         plt = pv.Plotter()
         plt.add_mesh(wall, style ='wireframe')
         plt.add_points(centernodes, color = 'red')
+        plt.add_text('Centerline for cutting')
         plt.show()
-        edgeprofiles.plot()
+        edgeprofiles.plot(text='IMS cutting steps')
 
     #Calculates the smallest area across the first 40mm of the inlet
     smallest_area, smallest_area_index = areaselection(slice_areas)
@@ -226,6 +227,7 @@ def cut(point, normal, wall, plot=False):
         plt.add_mesh(reg1, style= 'wireframe', color='green')
         plt.add_mesh(reg2, style= 'wireframe', color='red')
         plt.add_points(point)
+        plt.add_text('Clip plane for cutting')
         plt.show()
 
     # Extract geometry to keep from reg2
@@ -243,7 +245,7 @@ def cut(point, normal, wall, plot=False):
     #clipped.clear_data() #Commented to fix postproc, breaks main
 
     if plot==True:
-        clipped.plot()
+        clipped.plot(text='Cut geometry')
     return(clipped)
 
 def get_clip_perimeter(point, normal, wall, plot=False):

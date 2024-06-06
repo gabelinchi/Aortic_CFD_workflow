@@ -31,7 +31,7 @@ def remesh(wall_path, temp_dir,parameters, plot=False):
 
     if plot:
         wall_remeshed = pv.read(osp.join(temp_dir, r'wall_remeshed.vtk'))
-        wall_remeshed.plot(show_edges = True)
+        wall_remeshed.plot(show_edges = True, text='Remeshed surface')
 
     print('Succesfully remeshed wall')
 
@@ -61,7 +61,7 @@ def remesh_edge_detect(in_path, out_path, temp_path, parameters, plot=False):
     remeshed = pv.read(osp.join(temp_path, r'temp_for_plot_remesh.vtk'))
 
     if plot==True:
-        remeshed.plot(show_edges = True)
+        remeshed.plot(show_edges = True, text='Remeshed surface')
 
     print('Succesfully remeshed geometry')
     return(remeshed)
