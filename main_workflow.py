@@ -102,7 +102,7 @@ intp_options = {
     'hard_noslip': False}       # check if no-slip condition on walls is met
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = True
+show_plot = False
 
 #--------------------------------------------------------------------------------------------------------------------------
 # End of setup
@@ -391,8 +391,8 @@ shutil.rmtree(temp_dir)
 output_list = os.listdir(output_dir)
 
 #Path for FEBio solver executable
-#FEBio_path = r"C:/Program Files/bin/febio4.exe" #Path voor Yarran
-FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe" #Path voor normale mensen
+FEBio_path = r"C:/Program Files/bin/febio4.exe" #Path voor Yarran
+#FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe" #Path voor normale mensen
 
 #Run for every geometry a simulation
 for sim in sorted(output_list):

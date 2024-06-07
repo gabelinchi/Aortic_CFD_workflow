@@ -6,14 +6,16 @@ import utils as ut
 #main function that runs the cutter script
 def main_cutter(inlet, wall, plot=False):
     '''
-    Function that is the main for the cutting of the aorta geometry. It calls centerline, areaselection and cutting functions to perform the cut
+    Function that is the main for the cutting of the aorta geometry. It calls centerline, areaselection and
+    cutting functions to perform the cut
     :arg1 inlet: pyvista Polydata
     :arg2 wall: pyvista PolyData
 
     returns pyvista PolyData of the wall after the cut
     '''
     print('Start cutting')
-    #Calculates areas along the centerline of the aorta (only first 40 mm). Also outputs nodes/normals and edge profiles for the final cut and visualisation
+    #Calculates areas along the centerline of the aorta (only first 40 mm). Also outputs nodes/normals and
+    #edge profiles for the final cut and visualisation
     centernodes, centernormals, edgeprofiles, slice_areas = centerline(inlet, wall)
 
     #Plots the centerline
@@ -182,7 +184,12 @@ def areaselection(areas):
 
 def post_cutter(inlet, wall, plot=False, flip_norm=False):
     '''
-    Cuts a vessel at the point where the centerline is horizontal, returns downstream geomtetry.
+    Cuts a vessel at the point where the centerline is horizontal, returns downstream geomtetry. 
+
+    :arg1 inlet: pyvista PolyData
+    :arg2 wall: pyvista PolyData
+    :arg3 opt plot: show plots, default is False
+    :arg4 opt flip_norm: flips normals of the inlet, neccessary if centerline doesn't perform well
     '''
     print('Start cutting')
     #Calculates areas along the centerline of the aorta (only first 40 mm). Also outputs nodes/normals and edge profiles for the final cut and visualisation
@@ -213,7 +220,8 @@ def post_cutter(inlet, wall, plot=False, flip_norm=False):
 def cut(point, normal, wall, plot=False):
     """
     Function that cuts a vessel geometry along a plane defined by a point & vector, and keeps all regions upstream
-    of the point.
+    of the point. Seems to have issues
+    with more complicated geometry, haven't looked in to it yet as the function performs wel in the Aortic_CFD workflow
     :arg1 point: numpy array, xyz
     :arg2 normal: vector
     :arg3 wall: pyvista PolyData
