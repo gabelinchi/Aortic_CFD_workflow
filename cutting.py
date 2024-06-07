@@ -318,6 +318,10 @@ def ref_geom():
     dist_vmtk = np.linalg.norm(vmtkcenterline.find_closest_cell(points, return_closest_point=True)[1]-points, axis=1)
     dist_slicing = np.linalg.norm(ourcenterline.find_closest_cell(points, return_closest_point=True)[1]-points, axis=1)
 
+    dist_along_cl = np.zeros(points.shape[0])
+    for i in range(len(points)-1):
+        dist_along_cl[i+1] = dist_along_cl[i] + np.linalg.norm(points[i+1]-points[i])
+
     rel_vmtk = dist_vmtk/(spline['radius']*scale)
     rel_slicing = dist_slicing/(spline['radius']*scale)
 
@@ -329,10 +333,10 @@ def ref_geom():
     r_interp = np.interp(new_indices, original_indices, r)*scale
     print(tube.bounds)
 
-    pyplt.plot(rel_vmtk[10:-10]* 100, label = 'vmtk error [% of radius]')
-    pyplt.plot(rel_slicing[10:-10]* 100, label = 'custom alg. error [% of radius]')
-    pyplt.plot(r_interp/10, label = 'turn radius [cm]')
-    pyplt.xlabel('Datapoints along centerline')
+    pyplt.plot(dist_along_cl[10:-10], rel_vmtk[10:-10]* 100, label = 'vmtk error [% of radius]')
+    pyplt.plot(dist_along_cl[10:-10], rel_slicing[10:-10]* 100, label = 'custom alg. error [% of radius]')
+    pyplt.plot(dist_along_cl[10:-10], r_interp[10:-10]/10, label = 'turn radius [cm]')
+    pyplt.xlabel('Distance along centerline [mm]')
     pyplt.legend()
     pyplt.show()
     return
@@ -352,9 +356,15 @@ def aorta_geom():
 
     dist = np.linalg.norm(vmtk_centerline.find_closest_cell(centernodes, return_closest_point=True)[1]-centernodes, axis=1)
     dist_rel = dist/((areas/np.pi)**0.5)
-    pyplt.plot(dist_rel[15:-10]*100, label = 'custom alg.')
-    pyplt.xlabel('Datapoints along centerline')
-    pyplt.ylabel('Error [% of radius]')
+
+    dist_along_cl = np.zeros(centernodes.shape[0])
+    for i in range(len(centernodes)-1):
+        dist_along_cl[i+1] = dist_along_cl[i] + np.linalg.norm(centernodes[i+1]-centernodes[i])
+    print(dist_along_cl)
+    pyplt.plot(dist_along_cl[10:-10], dist_rel[10:-10]*100, label = 'Error [% of radius]')
+    pyplt.plot(dist_along_cl[10:-10], dist[10:-10], label = 'Error [mm]')
+    pyplt.xlabel('Distance along centerline [mm]')
+    pyplt.ylabel('Error')
     pyplt.legend()
     pyplt.show()
     return
