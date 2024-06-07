@@ -49,10 +49,10 @@ FEBio_parameters = dict(
     mu = 0.056,                                      #shear viscosity)
     
     #simulationcontrol
-    time_steps = 2000,                               #initial time steps, changes towards dtmax     
+    time_steps = 1200,                               #initial time steps, changes towards dtmax     
     step_size = 0.001,                               #seconds
     dtmin = 0,
-    dtmax = 0.001,                                   #max timestepsize
+    dtmax = 0.01,                                   #max timestepsize
 
     #loadcontroller
     interpolate = 'LINEAR')                          #can be'STEP',  'LINEAR' or 'SMOOTH'
@@ -147,230 +147,239 @@ i = 0
 retry = 0
 
 while i <= (n_geometries - 1):    #Creates an output folder for specific case, based on the input folder name
-    input_folder = osp.join(input_dir, input_list[i])
-    output_name = f'0{i}_Result_{input_list[i]}'
-    output_folder = osp.join(output_dir, output_name)
+    try:   
+        input_folder = osp.join(input_dir, input_list[i])
+        output_name = f'0{i}_Result_{input_list[i]}'
+        output_folder = osp.join(output_dir, output_name)
 
-    #Grab the path of the geometry files
-    inlet_path = osp.join(input_folder, osp.join(r'meshes', r'inlet.stl'))
-    wall_path = osp.join(input_folder, osp.join(r'meshes', r'wall.stl'))
-    outlet_path = osp.join(input_folder, osp.join(r'meshes', r'outlet.stl'))
+        #Grab the path of the geometry files
+        inlet_path = osp.join(input_folder, osp.join(r'meshes', r'inlet.stl'))
+        wall_path = osp.join(input_folder, osp.join(r'meshes', r'wall.stl'))
+        outlet_path = osp.join(input_folder, osp.join(r'meshes', r'outlet.stl'))
 
-    print('Created necessary files and directories')
+        print('Created necessary files and directories')
 
-    #Reading the files with pyvista
-    inlet = pv.read(inlet_path)
-    if retry > 0:
-        remesh.remesh(wall_path, temp_dir, mmg_parameters, show_plot)
-        wall = pv.read(osp.join(temp_dir, r'wall_remeshed.vtk'))
-        wall = wall.extract_surface().triangulate()
-    else:
-        wall = pv.read(wall_path)
-    outlet = pv.read(outlet_path)
+        #Reading the files with pyvista
+        inlet = pv.read(inlet_path)
+        if retry > 0:
+            remesh.remesh(wall_path, temp_dir, mmg_parameters, show_plot)
+            wall = pv.read(osp.join(temp_dir, r'wall_remeshed.vtk'))
+            wall = wall.extract_surface().triangulate()
+        else:
+            wall = pv.read(wall_path)
+        outlet = pv.read(outlet_path)
 
-    print('import of geometry done')
+        print('import of geometry done')
 
-    #--------------------------------------------------------------------------------------------------------------------------
-    # 3D-meshing algorithm
-    #--------------------------------------------------------------------------------------------------------------------------
+        #--------------------------------------------------------------------------------------------------------------------------
+        # 3D-meshing algorithm
+        #--------------------------------------------------------------------------------------------------------------------------
 
-    #Cut the wall geometry after the aortic root
-    wall_cut, inlet_new_center = cutting.main_cutter(inlet, wall, plot=show_plot)
-    pv.save_meshio(osp.join(temp_dir, r'wall_cut.mesh'), wall_cut)
+        #Cut the wall geometry after the aortic root
+        wall_cut, inlet_new_center = cutting.main_cutter(inlet, wall, plot=show_plot)
+        pv.save_meshio(osp.join(temp_dir, r'wall_cut.mesh'), wall_cut)
 
-    #Create caps
-    inlet_cap, outlet_cap = cap(wall_cut, inlet_new_center, outlet.points.mean(0), plot=show_plot)
-    pv.save_meshio(osp.join(temp_dir, r'inlet_cap.mesh'), inlet_cap)
-    pv.save_meshio(osp.join(temp_dir, r'outlet_cap.mesh'), outlet_cap)
+        #Create caps
+        inlet_cap, outlet_cap = cap(wall_cut, inlet_new_center, outlet.points.mean(0), plot=show_plot)
+        pv.save_meshio(osp.join(temp_dir, r'inlet_cap.mesh'), inlet_cap)
+        pv.save_meshio(osp.join(temp_dir, r'outlet_cap.mesh'), outlet_cap)
 
-    #Combine cutted wall and inlet/outlet caps
-    combined = (wall_cut + inlet_cap + outlet_cap).clean()
-    combined.clear_data()
-    print('Meshes succesfully combined')
+        #Combine cutted wall and inlet/outlet caps
+        combined = (wall_cut + inlet_cap + outlet_cap).clean()
+        combined.clear_data()
+        print('Meshes succesfully combined')
 
-    #Plot result of mesh combining.
-    if show_plot:
-        plt = pv.Plotter()
-        plt.add_mesh(combined, style='wireframe')
-        edgetest = combined.extract_feature_edges(boundary_edges=True, non_manifold_edges=True, manifold_edges=False, feature_edges=False)
-        plt.show()
+        #Plot result of mesh combining.
+        if show_plot:
+            plt = pv.Plotter()
+            plt.add_mesh(combined, style='wireframe')
+            edgetest = combined.extract_feature_edges(boundary_edges=True, non_manifold_edges=True, manifold_edges=False, feature_edges=False)
+            plt.show()
 
-    pv.save_meshio(osp.join(temp_dir, r'combined_mesh.mesh'), combined)
+        pv.save_meshio(osp.join(temp_dir, r'combined_mesh.mesh'), combined)
 
 
-    #Run remesh (takes predetermined internally defined file path as input, DON'T CHANGE)
-    combined_remeshed = remesh.remesh_edge_detect(osp.join(temp_dir, r'combined_mesh.mesh'), osp.join(temp_dir, r'combined_mmg.mesh'), temp_dir, mmg_parameters, plot=show_plot)
-    
-    #triangulation step to make sure Tetgen only gets triangles as input
-    combined_remeshed = combined_remeshed.extract_surface().triangulate()
+        #Run remesh (takes predetermined internally defined file path as input, DON'T CHANGE)
+        combined_remeshed = remesh.remesh_edge_detect(osp.join(temp_dir, r'combined_mesh.mesh'), osp.join(temp_dir, r'combined_mmg.mesh'), temp_dir, mmg_parameters, plot=show_plot)
+        
+        #triangulation step to make sure Tetgen only gets triangles as input
+        combined_remeshed = combined_remeshed.extract_surface().triangulate()
 
-    #Report quality
-    report_text_2D = quality_control.meshreport(combined_remeshed, 'Surface mesh quality report')[1]
+        #Report quality
+        report_text_2D = quality_control.meshreport(combined_remeshed, 'Surface mesh quality report')[1]
 
-    #Check mesh validity
-    if not combined_remeshed.is_manifold:
-        if retry < max_retry:
-            print('Non-manifold surface due to initial geometry error, perform retry')
+        #Check mesh validity
+        if not combined_remeshed.is_manifold:
+            if retry < max_retry:
+                print('Non-manifold surface due to initial geometry error, perform retry')
+                retry += 1
+            else: 
+                print('Terminating, unable to create 3D mesh')
+                print('See log files for quality rapport')
+                log_folder = osp.join(file_dir, r'log\failed')
+                ut.save_string_to_file(report_text_2D, osp.join(log_folder, f'Qualityreport_failed_geometry_{input_list[i]}'))
+                i += 1
+                retry = 0
+            continue
+
+        #Make an initial 3D mesh from the combined mesh using TetGen
+        combined_remeshed = combined_remeshed
+        try:
+            tetmesh = volume_mesh.tetgen(combined_remeshed, tetgen_parameters, plot=show_plot)
+        except:
             retry += 1
-        else: 
-            print('Terminating, unable to create 3D mesh')
-            print('See log files for quality rapport')
-            log_folder = osp.join(file_dir, r'log\failed')
-            ut.save_string_to_file(report_text_2D, osp.join(log_folder, f'Qualityreport_failed_geometry_{input_list[i]}'))
-            i += 1
-            retry = 0
-        continue
+            if retry > max_retry:
+                print('Terminating, unable to create 3D mesh')
+                print('See log files for quality rapport')
+                log_folder = osp.join(file_dir, r'log\failed')
+                ut.save_string_to_file(report_text_2D, osp.join(log_folder, f'Qualityreport_failed_geometry_{input_list[i]}'))
+                i += 1
+                retry = 0
+                continue
+            print('Non-manifold surface due to initial geometry error or other tetgen error, perform retry')
+            continue
 
-    #Make an initial 3D mesh from the combined mesh using TetGen
-    combined_remeshed = combined_remeshed
-    try:
-        tetmesh = volume_mesh.tetgen(combined_remeshed, tetgen_parameters, plot=show_plot)
-    except:
-        retry += 1
-        if retry > max_retry:
-            print('Terminating, unable to create 3D mesh')
+        #Plot bisection
+        if show_plot:
+            quality_control.clip_plot(tetmesh, 'Initial 3D mesh')
+
+        #Report quality
+        quality_control.meshreport(tetmesh, 'Initial 3D mesh quality report')
+
+        #Create a .sol file for mmg3d
+        volume_mesh.write_sol(tetmesh, wall_cut, mmg3d_sol_parameters, osp.join(temp_dir, r'initial_volume_mesh.sol'), plot=show_plot)
+
+        #Save initial mesh
+        tetmesh.point_data.clear()
+        tetmesh.cell_data.clear()
+        pv.save_meshio(osp.join(temp_dir, r'initial_volume_mesh.mesh'), tetmesh)
+
+        #Refine 3D mesh with mmg3d
+        tetmesh = volume_mesh.mmg3d(osp.join(temp_dir, r'initial_volume_mesh.mesh'), osp.join(temp_dir, r'mmg3d_mesh.mesh'), temp_dir, mmg3d_parameters, plot=show_plot)
+
+        #Report quality
+        report, report_text = quality_control.meshreport(tetmesh, f'Refined 3D mesh quality report {input_list[i]}')
+
+        #Plot bad cells
+        jac = report['jac']
+        if show_plot:
+            jac = report['jac']
+            if np.any(jac<0.3):
+                plt = pv.Plotter()
+                plt.add_mesh(tetmesh, style='wireframe')
+                plt.add_mesh(tetmesh.extract_cells(jac<0.3), color='red', show_edges=True)
+                plt.add_text('Bad cells')
+                plt.show()
+            else: print('No bad cells')
+
+        #Plot bisection
+        if show_plot:
+            quality_control.clip_plot(tetmesh, 'Refined 3D mesh')
+
+        #Save 3D mesh
+        tetmesh.save(osp.join(temp_dir, r'3D_output_mesh.vtk'))
+
+        #Run qualification
+        numcells = report['cells']
+        aspect = report['aspect']
+        if numcells > max_elements or any(aspect > max_aspect) or any(jac < min_jacobian): run = False
+        else: run=True
+
+        #Plot 3D_mesh
+        if show_plot:
+            if run:text='Final 3D mesh'
+            else:text='Final 3D mesh - insufficient quality or too many nodes'
+            tetmesh.plot(show_edges = True, text=text)
+
+        #Write a log file of the mesh quality and continue to next geometry if quality is not sufficient.
+        if run==False and retry < max_retry:
+            print('Mesh quality insufficient, starting new meshing attempt')
+            retry += 1
+            continue
+        elif run==False and retry >= max_retry:
+            print('Terminating, 3D mesh insufficient quality or too many nodes')
             print('See log files for quality rapport')
             log_folder = osp.join(file_dir, r'log\failed')
-            ut.save_string_to_file(report_text_2D, osp.join(log_folder, f'Qualityreport_failed_geometry_{input_list[i]}'))
+            ut.save_string_to_file(report_text, osp.join(log_folder, f'Qualityreport_failed_geometry_{input_list[i]}'))
             i += 1
             retry = 0
             continue
-        print('Non-manifold surface due to initial geometry error or other tetgen error, perform retry')
-        continue
+        else:
+            print('Quality is sufficient')
+            log_folder = osp.join(file_dir, r'log')
+            ut.save_string_to_file(report_text, osp.join(log_folder, f'Qualityreport_geometry_{input_list[i]}'))
+            retry = 0
 
-    #Plot bisection
-    if show_plot:
-        quality_control.clip_plot(tetmesh, 'Initial 3D mesh')
 
-    #Report quality
-    quality_control.meshreport(tetmesh, 'Initial 3D mesh quality report')
+        #----------------------------------------------------------------------------------------------------------------------------
+        # Identification
+        #----------------------------------------------------------------------------------------------------------------------------
 
-    #Create a .sol file for mmg3d
-    volume_mesh.write_sol(tetmesh, wall_cut, mmg3d_sol_parameters, osp.join(temp_dir, r'initial_volume_mesh.sol'), plot=show_plot)
+        #Create the seeds for the surface identification based on the center points. INLET FIRST!, OUTLET SECOND!
+        seeds = np.array([inlet_cap.points.mean(0),outlet_cap.points.mean(0)])
 
-    #Save initial mesh
-    tetmesh.point_data.clear()
-    tetmesh.cell_data.clear()
-    pv.save_meshio(osp.join(temp_dir, r'initial_volume_mesh.mesh'), tetmesh)
+        #Detect the surfaces of the 3D mesh whilst keeping the original ID's, if there is a seed delivered
+        if len(seeds) > 0:
+            surface_identification = id.identify_surfaces(tetmesh, id_angle, seeds, show_plot)
 
-    #Refine 3D mesh with mmg3d
-    tetmesh = volume_mesh.mmg3d(osp.join(temp_dir, r'initial_volume_mesh.mesh'), osp.join(temp_dir, r'mmg3d_mesh.mesh'), temp_dir, mmg3d_parameters, plot=show_plot)
+        #Check if three surfaces are id'ed
+        num_surfaces = len(surface_identification)
+        if num_surfaces != 3:
+            reportstring = f'Incorrect number of surfaces found ({num_surfaces}) , skipped geometry'
+            print(reportstring)
+            print('See log files for error')
+            log_folder = osp.join(file_dir, r'log\failed')
+            ut.save_string_to_file(reportstring, osp.join(log_folder, f'Logreport_failed_geometry_{input_list[i]}'))
+            i += 1
+            retry = 0
+            continue
 
-    #Report quality
-    report, report_text = quality_control.meshreport(tetmesh, f'Refined 3D mesh quality report {input_list[i]}')
+        #Seperate the indentified surfaces in inlet/outlet/wall
+        id_inlet = surface_identification[0]
+        id_outlet = surface_identification[1]
+        id_wall = surface_identification[2]
 
-    #Plot bad cells
-    jac = report['jac']
-    if show_plot:
-        jac = report['jac']
-        if np.any(jac<0.3):
+        print('Surface identification done')
+        #Plot the identified surfaces for general overview
+        if show_plot:
             plt = pv.Plotter()
-            plt.add_mesh(tetmesh, style='wireframe')
-            plt.add_mesh(tetmesh.extract_cells(jac<0.3), color='red', show_edges=True)
-            plt.add_text('Bad cells')
+            plt.add_mesh(id_inlet, show_edges = True, color = 'red')
+            plt.add_mesh(id_outlet, show_edges = True, color = 'blue')
+            plt.add_mesh(id_wall, show_edges = True, color = 'green')
             plt.show()
-        else: print('No bad cells')
 
-    #Plot bisection
-    if show_plot:
-        quality_control.clip_plot(tetmesh, 'Refined 3D mesh')
+        #At this point meshing is succesfull and output files are written, geometry specific output folder is created.
+        os.makedirs(output_folder, exist_ok=True)
+        #----------------------------------------------------------------------------------------------------------------------------
+        # Mapping
+        #----------------------------------------------------------------------------------------------------------------------------
 
-    #Save 3D mesh
-    tetmesh.save(osp.join(temp_dir, r'3D_output_mesh.vtk'))
+        #Perform the mapping of the velocity profiles on the inlet
+        #Output is a point cloud on every inlet node with the respective velocity data and the amount of mapped velocity profiles
 
-    #Run qualification
-    numcells = report['cells']
-    aspect = report['aspect']
-    if numcells > max_elements or any(aspect > max_aspect) or any(jac < min_jacobian): run = False
-    else: run=True
+        velocity_mapped, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_folder, intp_options, show_plot)
+        #----------------------------------------------------------------------------------------------------------------------------
+        # FEBio Creation
+        #----------------------------------------------------------------------------------------------------------------------------
 
-    #Plot 3D_mesh
-    if show_plot:
-        if run:text='Final 3D mesh'
-        else:text='Final 3D mesh - insufficient quality or too many nodes'
-        tetmesh.plot(show_edges = True, text=text)
+        #Create a solver compatible file based on the 3D-mesh and meshing parameters
+        feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_mapped, file_dir, output_folder, FEBio_parameters)
 
-    #Write a log file of the mesh quality and continue to next geometry if quality is not sufficient.
-    if run==False and retry < max_retry:
-        print('Mesh quality insufficient, starting new meshing attempt')
-        retry += 1
-        continue
-    elif run==False and retry >= max_retry:
-        print('Terminating, 3D mesh insufficient quality or too many nodes')
-        print('See log files for quality rapport')
-        log_folder = osp.join(file_dir, r'log\failed')
-        ut.save_string_to_file(report_text, osp.join(log_folder, f'Qualityreport_failed_geometry_{input_list[i]}'))
         i += 1
-        retry = 0
-        continue
-    else:
-        print('Quality is sufficient')
-        log_folder = osp.join(file_dir, r'log')
-        ut.save_string_to_file(report_text, osp.join(log_folder, f'Qualityreport_geometry_{input_list[i]}'))
-        retry = 0
 
 
-    #----------------------------------------------------------------------------------------------------------------------------
-    # Identification
-    #----------------------------------------------------------------------------------------------------------------------------
-
-    #Create the seeds for the surface identification based on the center points. INLET FIRST!, OUTLET SECOND!
-    seeds = np.array([inlet_cap.points.mean(0),outlet_cap.points.mean(0)])
-
-    #Detect the surfaces of the 3D mesh whilst keeping the original ID's, if there is a seed delivered
-    if len(seeds) > 0:
-        surface_identification = id.identify_surfaces(tetmesh, id_angle, seeds, show_plot)
-
-    #Check if three surfaces are id'ed
-    num_surfaces = len(surface_identification)
-    if num_surfaces != 3:
-        reportstring = f'Incorrect number of surfaces found ({num_surfaces}) , skipped geometry'
-        print(reportstring)
-        print('See log files for error')
-        log_folder = osp.join(file_dir, r'log\failed')
-        ut.save_string_to_file(reportstring, osp.join(log_folder, f'Logreport_failed_geometry_{input_list[i]}'))
-        i += 1
-        retry = 0
-        continue
-
-    #Seperate the indentified surfaces in inlet/outlet/wall
-    id_inlet = surface_identification[0]
-    id_outlet = surface_identification[1]
-    id_wall = surface_identification[2]
-
-    print('Surface identification done')
-    #Plot the identified surfaces for general overview
-    if show_plot:
-        plt = pv.Plotter()
-        plt.add_mesh(id_inlet, show_edges = True, color = 'red')
-        plt.add_mesh(id_outlet, show_edges = True, color = 'blue')
-        plt.add_mesh(id_wall, show_edges = True, color = 'green')
-        plt.show()
-
-    #At this point meshing is succesfull and output files are written, geometry specific output folder is created.
-    os.makedirs(output_folder, exist_ok=True)
-    #----------------------------------------------------------------------------------------------------------------------------
-    # Mapping
-    #----------------------------------------------------------------------------------------------------------------------------
-
-    #Perform the mapping of the velocity profiles on the inlet
-    #Output is a point cloud on every inlet node with the respective velocity data and the amount of mapped velocity profiles
-
-    velocity_mapped, n_maps = mapping.vel_mapping(vel_profile_dir, id_inlet, output_folder, intp_options, show_plot)
-    #----------------------------------------------------------------------------------------------------------------------------
-    # FEBio Creation
-    #----------------------------------------------------------------------------------------------------------------------------
-
-    #Create a solver compatible file based on the 3D-mesh and meshing parameters
-    feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_mapped, file_dir, output_folder, FEBio_parameters)
-
-    i += 1
-
+    except Exception as e:
+        if "ERROR:root:Unsupported data type: vtktypeint32" in str(e):         #python gives an error here but it doesnt matter
+            print("Ignoring unsupported data type error.")
+        else:
+            print('an error has occured')                           #all the other errors
+            log_folder = osp.join(file_dir, r'log\failed')
+            ut.save_string_to_file('an unknown error has occured. Check if directories and input are set up correctly', osp.join(log_folder, f'unknown_error_{input_list[i]}'))
+            i += 1
+            continue
+#-----------------------------------------Start automatic simulation workflow-------------------------------------------------
 #Deletes the temporary folder (might want to modify it to only delete the files)
 shutil.rmtree(temp_dir)
-
-#-----------------------------------------Start automatic simulation workflow-------------------------------------------------
-
 #----------------------------------------------------------------------------------------------------------------------------
 # FEBio Run
 #----------------------------------------------------------------------------------------------------------------------------
@@ -384,10 +393,10 @@ FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe" #Path voor normale 
 
 #Run for every geometry a simulation
 for sim in sorted(output_list):
-    #Run FEBio
-    sim_folder = osp.join(output_dir, sim)
-    #Use the current
     try:
+        #Run FEBio
+        sim_folder = osp.join(output_dir, sim)
+        #Use the current
         FEBio_inputfile = osp.join(sim_folder, r'simulation.feb')
         subprocess.run([FEBio_path, FEBio_inputfile], check = True)
     except:

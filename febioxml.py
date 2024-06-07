@@ -13,11 +13,6 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     #-------------------------------------------------------------------------------------------------------------------------
     # Inputs
     # ------------------------------------------------------------------------------------------------------------------------
-    
-    #-------------------------------------------------------------------------------------------------------------------------
-    # Inputs
-    # ------------------------------------------------------------------------------------------------------------------------
-    
     #additional FEBio parameters
 
     #Boundarycondition zerofluidvelocity
@@ -72,9 +67,13 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     cmax = 100000
 
     #loadcontroller
-    
-    
     extend = "CONSTANT"                     #sws niet nodig, overal gedefineerd
+
+    #-------------------------------------------------------------------------------------------------------------------------
+    # Inputs
+    # ------------------------------------------------------------------------------------------------------------------------
+    
+    
 
     #-------------------------------------------------------------------------------------------------------------------------
     # Adding nodes and elements
@@ -195,33 +194,34 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
         loadcurve_list = np.zeros((time_steps, 2))
         
         dt = t_end-t_start
-        if n == 1:
+        if n == 1:                                                         #the first loadcontroller starts at 1 and decreases. at the end of the cycle it increases.
             for i in range(time_steps):
-                t = (i) * step_size                                       #timepoint at each step
-                if (t % cycle) < (t_start-dt):                                         #amplification factor = 0 for time before t start
+                t = (i) * step_size                                        #timepoint at each step
+                if (t % cycle) < (t_start-dt):                             #amplification factor = 0 for time before t start
                     f = 0
-                elif (t_start+cycle-dt)<= (t % cycle) < cycle:                              #amplification factor = 1 for time between t start and t end
+                elif (t_start+cycle-dt)<= (t % cycle) < cycle:             #amplification factor increases linearly for time between t_start-dt and t_start
                     f = ((t % cycle)-t_start-cycle+dt)/dt
-                elif t_start<= (t % cycle) < (t_start+dt):                              #amplification factor = 1 for time between t start and t end
+                elif t_start<= (t % cycle) < (t_start+dt):                 #amplification factor decreases linearly for time between t_start and t_start +dt
                     f = (-(t % cycle)+t_start+dt)/dt
-                else:                                                   #amplification factor = 0 for time after t end
+                else:                                                      #amplification factor = 0 for time after t_start+dt
                     f = 0
-                loadcurve_list[i] = np.array([t, f])                         #add function f(t) as points
+                loadcurve_list[i] = np.array([t, f])                       #add function f(t) as points
 
         else: 
-            for i in range(time_steps):
-                t = (i) * step_size                                       #timepoint at each step
-                if (t % cycle) < (t_start-dt):                                         #amplification factor = 0 for time before t start
+            for i in range(time_steps):                                    #all loadcontrollers that arent the first one increase first, then decrease. 
+                t = (i) * step_size                                        #timepoint at each step
+                if (t % cycle) < (t_start-dt):                             #amplification factor = 0 for time before t start
                     f = 0
-                elif (t_start-dt)<= (t % cycle) < t_start:                              #amplification factor = 1 for time between t start and t end
+                elif (t_start-dt)<= (t % cycle) < t_start:                 #amplification factor increases linearly for time between t_start-dt and t_start
                     f = ((t % cycle)-t_start+dt)/dt
-                elif t_start<= (t % cycle) < (t_start+dt):                              #amplification factor = 1 for time between t start and t end
+                elif t_start<= (t % cycle) < (t_start+dt):                 #amplification factor decreases linearly for time between t_start and t_start +dt
                     f = (-(t % cycle)+t_start+dt)/dt
-                else:                                                   #amplification factor = 0 for time after t end
+                else:                                                      #amplification factor = 0 for time after t_start+dt
                     f = 0
-                loadcurve_list[i] = np.array([t, f])                         #add function f(t) as points
-
-        load_main = root.find('.//LoadData')
+                loadcurve_list[i] = np.array([t, f])                       #add function f(t) as points
+        
+        #create a new loadcurve subelement in .xml file for each load
+        load_main = root.find('.//LoadData')                               
         new_controller = ET.SubElement(load_main, 'load_controller')
         new_controller.set('id', f"{n}")
         new_controller.set('type', "loadcurve")
@@ -244,15 +244,14 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
         
         for array in loadcurve_list:                     # Create XML elements for each point in the load curve:
             element_name = "pt"
-            element = ET.Element(element_name)              #make the string an .xml element
+            element = ET.Element(element_name)           #make the string an .xml element
             t, f = array
             element.text = str(t) + ',' + str(f)
             element.tail= '\n\t\t\t\t'
-            points_element.append(element)                  #add points to the xml
+            points_element.append(element)               #add points to the xml
 
     #one loadcurve for each velocityprofile snapshot:
-    
-    cycle = 60/FEBio_parameters['hr']       #time in seconds
+    cycle = 60/FEBio_parameters['hr']       #systolic cycle time in seconds
     profiles = len(velocity_profile)
     for i in range(profiles):
         loadcurve(FEBio_parameters['interpolate'], extend, FEBio_parameters['time_steps'], FEBio_parameters['step_size'],cycle, root, (cycle/profiles)*i, (cycle/profiles)*(i+1), i +1)
@@ -426,6 +425,8 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
                 print(f"Element '{variable}' under '{parent}' not found.")
         return
 
+    #change all variable FEBio inputs to required value:
+    
     #single parent
     Parent1('Control', 'analysis', str(analysis))
     Parent1('Control', 'time_steps', str(FEBio_parameters['time_steps']))
@@ -532,13 +533,14 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     #-------------------------------------------------------------------------------------------------------------------------
     # Output
     # ------------------------------------------------------------------------------------------------------------------------
-    def outputs(output):
+    def outputs(output):                                                #create subelement under the outputs
         output_main = root.find('.//Output/plotfile[@type="febio"]')
         new_output = ET.SubElement(output_main, 'var')
         new_output.set('type', f"{output}")
         new_output.tail = '\n\t\t'
         return
 
+    #create the wanted ouputs
     if FEBio_parameters['displacement']==True:
         outputs('displacement')
     if FEBio_parameters['fluid_pressure'] == True:
@@ -562,7 +564,6 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
 
 
     #create FEBio file
-   
     tree.write(osp.join(output_dir, r'simulation.feb'), encoding='ISO-8859-1', xml_declaration=True,)
 
     return
