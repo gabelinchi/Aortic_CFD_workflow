@@ -189,13 +189,13 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
         combined.clear_data()
         print('Meshes succesfully combined')
 
-    #Plot result of mesh combining.
-    if show_plot:
-        plt = pv.Plotter()
-        plt.add_mesh(combined, style='wireframe')
-        plt.add_text('Wall and caps')
-        edgetest = combined.extract_feature_edges(boundary_edges=True, non_manifold_edges=True, manifold_edges=False, feature_edges=False)
-        plt.show()
+        #Plot result of mesh combining.
+        if show_plot:
+            plt = pv.Plotter()
+            plt.add_mesh(combined, style='wireframe')
+            plt.add_text('Wall and caps')
+            edgetest = combined.extract_feature_edges(boundary_edges=True, non_manifold_edges=True, manifold_edges=False, feature_edges=False)
+            plt.show()
 
         pv.save_meshio(osp.join(temp_dir, r'combined_mesh.mesh'), combined)
 
@@ -273,9 +273,9 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
                 plt.show()
             else: print('No bad cells')
 
-    #Plot bisection
-    if show_plot:
-        quality_control.clip_plot(tetmesh, 'Final 3D mesh clipped view')
+        #Plot bisection
+        if show_plot:
+            quality_control.clip_plot(tetmesh, 'Final 3D mesh clipped view')
 
         #Save 3D mesh
         tetmesh.save(osp.join(temp_dir, r'3D_output_mesh.vtk'))
@@ -340,16 +340,16 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
         id_outlet = surface_identification[1]
         id_wall = surface_identification[2]
 
-    print('Surface identification done')
-    #Plot the identified surfaces for general overview
-    if show_plot:
-        plt = pv.Plotter()
-        plt.add_mesh(id_inlet, color = 'red', label = 'Inlet')
-        plt.add_mesh(id_outlet, color = 'blue', label = 'Outlet')
-        plt.add_mesh(id_wall, color = 'green', label = 'Wall')
-        plt.add_legend()
-        plt.add_text('Identified surfaces')
-        plt.show()
+        print('Surface identification done')
+        #Plot the identified surfaces for general overview
+        if show_plot:
+            plt = pv.Plotter()
+            plt.add_mesh(id_inlet, color = 'red', label = 'Inlet')
+            plt.add_mesh(id_outlet, color = 'blue', label = 'Outlet')
+            plt.add_mesh(id_wall, color = 'green', label = 'Wall')
+            plt.add_legend()
+            plt.add_text('Identified surfaces')
+            plt.show()
 
         #At this point meshing is succesfull and output files are written, geometry specific output folder is created.
         os.makedirs(output_folder, exist_ok=True)
