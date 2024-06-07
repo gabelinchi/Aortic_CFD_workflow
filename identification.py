@@ -10,6 +10,10 @@ def identify_surfaces (mesh, angle, seeds=[], plot=False, include_original_conne
     data embedded in the MultiBlock are the original point indices (point_data['orig_point_indices']) and the faces of the identified surfaces
     defined by the original point indices (cell_data['original_connectivity']).
 
+    bugs & limis:
+    BUG If closest point to seed is on an edge, function misbehaves
+    LIMIT Function only works for meshes where te surface consists of only triangles
+
     :mesh   : pyvista PolyData or Multiblock, mesh to be split up
     :angle  : int, sharp edge detection angle
     :seeds  : 2D numpy array containing xyz coords, can be used to order the surfaces if points near the surfaces
