@@ -64,7 +64,7 @@ def interpolate_profiles(aligned_planes, fxdpts, intp_options):
                             epsilon=1, degree=intp_options['degree'])
 
         vel_interp.append(I(fxdpts))
-
+    
     # hard no slip condition (double check)
     if intp_options['hard_noslip']:
         for k in range(num_frames):
