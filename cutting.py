@@ -21,8 +21,9 @@ def main_cutter(inlet, wall, plot=False):
         plt = pv.Plotter()
         plt.add_mesh(wall, style ='wireframe')
         plt.add_points(centernodes, color = 'red')
+        plt.add_text('Centerline for cutting')
         plt.show()
-        edgeprofiles.plot()
+        edgeprofiles.plot(text='IMS cutting steps')
 
     #Calculates the smallest area across the first 40mm of the inlet
     smallest_area, smallest_area_index = areaselection(slice_areas)
@@ -43,6 +44,7 @@ def main_cutter(inlet, wall, plot=False):
 def centerline(inlet, wall, dist=40, flip_norm=False):
     '''
     Function that calculates an approximation of the centerline of the wall geometry
+    Known shortcoming: Function does not automatically end at end of geometry but gives an error when reaching the end
     :arg1 inlet: pyvista Polydata
     :arg2 wall: pyvista PolyData
     :opt arg3: the distance from the inlet at which the function stops calculating
@@ -226,6 +228,7 @@ def cut(point, normal, wall, plot=False):
         plt.add_mesh(reg1, style= 'wireframe', color='green')
         plt.add_mesh(reg2, style= 'wireframe', color='red')
         plt.add_points(point)
+        plt.add_text('Clip plane for cutting')
         plt.show()
 
     # Extract geometry to keep from reg2
@@ -243,7 +246,7 @@ def cut(point, normal, wall, plot=False):
     #clipped.clear_data() #Commented to fix postproc, breaks main
 
     if plot==True:
-        clipped.plot()
+        clipped.plot(text='Cut geometry')
     return(clipped)
 
 def get_clip_perimeter(point, normal, wall, plot=False):

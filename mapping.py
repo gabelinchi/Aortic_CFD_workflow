@@ -109,12 +109,13 @@ def vel_mapping(source_profile_dir, target_plane, outputDir, intp_options, plot=
         n = 0
         for i in interp_planes:
             i = i.extract_surface()
-            source_profiles[n].plot()
+            source_profiles[n].plot(text='Source profile')
             if True:
                 plt = pv.Plotter()
                 plt.add_mesh(target_plane, show_edges = True, color = 'black')
                 plt.add_arrows(i.points, 20 * i['Velocity'], color = 'black')
                 plt.add_mesh(i)
+                plt.add_text('Mapped profile')
                 plt.show()
             n = n + 1
     

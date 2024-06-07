@@ -26,7 +26,7 @@ def cap(wall, inlet_center, outlet_center, plot=False):
     
     #Plot extracted edges
     if plot==True:
-        edges.plot(color='red')
+        edges.plot(color='red', text='Perimeters to cap')
     
     # Split edges into separate data
     inlet_edges = edges.connectivity('closest', inlet_center)
@@ -42,6 +42,7 @@ def cap(wall, inlet_center, outlet_center, plot=False):
         plt.add_mesh(inlet, label='Inlet', color='red', show_edges=True)
         plt.add_mesh(outlet, label='Outlet', color='blue', show_edges=True)
         plt.add_legend()
+        plt.add_text('Generated caps')
         plt.show()
 
     print('Finished cap generation')

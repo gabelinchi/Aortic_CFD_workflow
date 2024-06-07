@@ -84,7 +84,7 @@ tetgen_parameters = dict(
     fixedvolume=True,
     maxvolume=1)
 
-#Run qualifications (code will terminate if not met)
+#Run qualifications (case will be discarded if not met)
 max_elements = 1000000
 min_jacobian = 0.1
 max_aspect   = 5
@@ -101,11 +101,12 @@ intp_options = {
     'degree': 0,                # degree of polynomial added to the RBF interpolation matrix
     'hard_noslip': False}       # check if no-slip condition on walls is met
 
-
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = False
-show_plot = False
+show_plot = True
 
+#--------------------------------------------------------------------------------------------------------------------------
+# End of setup
+#--------------------------------------------------------------------------------------------------------------------------
 
 #Create file environment before looping
 #Get directory of main_workflow file
@@ -133,7 +134,6 @@ os.makedirs(osp.join(log_dir, r'failed'), exist_ok=True)
 #Select input folder names and count the amount of input geometries
 input_list = os.listdir(input_dir)
 n_geometries = len(input_list)
-
 
 print('Setup done')
 
@@ -189,12 +189,13 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
         combined.clear_data()
         print('Meshes succesfully combined')
 
-        #Plot result of mesh combining.
-        if show_plot:
-            plt = pv.Plotter()
-            plt.add_mesh(combined, style='wireframe')
-            edgetest = combined.extract_feature_edges(boundary_edges=True, non_manifold_edges=True, manifold_edges=False, feature_edges=False)
-            plt.show()
+    #Plot result of mesh combining.
+    if show_plot:
+        plt = pv.Plotter()
+        plt.add_mesh(combined, style='wireframe')
+        plt.add_text('Wall and caps')
+        edgetest = combined.extract_feature_edges(boundary_edges=True, non_manifold_edges=True, manifold_edges=False, feature_edges=False)
+        plt.show()
 
         pv.save_meshio(osp.join(temp_dir, r'combined_mesh.mesh'), combined)
 
@@ -272,9 +273,9 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
                 plt.show()
             else: print('No bad cells')
 
-        #Plot bisection
-        if show_plot:
-            quality_control.clip_plot(tetmesh, 'Refined 3D mesh')
+    #Plot bisection
+    if show_plot:
+        quality_control.clip_plot(tetmesh, 'Final 3D mesh clipped view')
 
         #Save 3D mesh
         tetmesh.save(osp.join(temp_dir, r'3D_output_mesh.vtk'))
@@ -339,14 +340,16 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
         id_outlet = surface_identification[1]
         id_wall = surface_identification[2]
 
-        print('Surface identification done')
-        #Plot the identified surfaces for general overview
-        if show_plot:
-            plt = pv.Plotter()
-            plt.add_mesh(id_inlet, show_edges = True, color = 'red')
-            plt.add_mesh(id_outlet, show_edges = True, color = 'blue')
-            plt.add_mesh(id_wall, show_edges = True, color = 'green')
-            plt.show()
+    print('Surface identification done')
+    #Plot the identified surfaces for general overview
+    if show_plot:
+        plt = pv.Plotter()
+        plt.add_mesh(id_inlet, color = 'red', label = 'Inlet')
+        plt.add_mesh(id_outlet, color = 'blue', label = 'Outlet')
+        plt.add_mesh(id_wall, color = 'green', label = 'Wall')
+        plt.add_legend()
+        plt.add_text('Identified surfaces')
+        plt.show()
 
         #At this point meshing is succesfull and output files are written, geometry specific output folder is created.
         os.makedirs(output_folder, exist_ok=True)

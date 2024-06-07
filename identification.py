@@ -44,7 +44,7 @@ def identify_surfaces (mesh, angle, seeds=[], plot=False, include_original_conne
     edgefaces = np.any(np.isin(faces, edgenode_indices), axis=1) # Creates bool array of rows containing edgepoints
 
     if plot==True:
-        boolplot(surf, edgefaces, text='edges')
+        boolplot(surf, edgefaces, text='Edges')
 
     # Create surfaces array, first column is edges:
     surfaces = edgefaces.reshape(-1,1)
