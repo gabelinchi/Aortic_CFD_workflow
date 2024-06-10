@@ -8,10 +8,18 @@ import tetgen as tet
 import meshio
 import subprocess as sub
 
-#General remesh function, currently not used in the workflow (MIGHT DELETE IN FINAL PRODUCT!)
-def remesh(wall_path, temp_dir,parameters, plot=False):
 
-    file_input_location = osp.join(temp_dir, r'wall.mesh')
+def remesh(wall_path, temp_dir,parameters, plot=False):
+    '''
+    Function to remesh an open surface using mmg. Saves a .mesh
+
+    :arg1 wall_path: path to wall file
+    :arg2 temp_dir: path to directory used for temporary files
+    :arg3 parameters: mmg meshing parameters
+    :opt arg4 plot: show plots, default is false
+    '''
+
+    file_input_location = osp.join(temp_dir, r'wall.mesh') #hardcoded filename
     file_output_location = osp.join(temp_dir, r'wall_remeshed.mesh')
 
     # Convert input file from stl to .mesh
