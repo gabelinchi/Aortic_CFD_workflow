@@ -41,7 +41,7 @@ FEBio_parameters = dict(
     fluid_dilatation = False,
     fluid_volume_ratio = False,
     
-    vtk = True,
+    vtk = False,                                    
 
     #fluidconstants
     materialtype = 'fluid',
@@ -151,7 +151,8 @@ i = 0
 retry = 0
 runtimes = []
 while i <= (n_geometries - 1):    #Creates an output folder for specific case, based on the input folder name
-    if True:   
+    try:   
+        start = time.time()
         input_folder = osp.join(input_dir, input_list[i])
         output_name = f'0{i}_Result_{input_list[i]}'
         output_folder = osp.join(output_dir, output_name)
@@ -378,7 +379,7 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
         i += 1
 
 
-"""except Exception as e:
+    except Exception as e:
         if "ERROR:root:Unsupported data type: vtktypeint32" in str(e):         #python gives an error here but it doesnt matter
             print("Ignoring unsupported data type error.")
         else:
@@ -391,10 +392,9 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
 
 print('Preprocessing per case took [s]:')
 print(runtimes)
-            continue """
 #-----------------------------------------Start automatic simulation workflow-------------------------------------------------
 #Deletes the temporary folder (might want to modify it to only delete the files)
-#shutil.rmtree(temp_dir)
+shutil.rmtree(temp_dir)
 #----------------------------------------------------------------------------------------------------------------------------
 # FEBio Run
 #----------------------------------------------------------------------------------------------------------------------------
@@ -403,8 +403,8 @@ print(runtimes)
 output_list = os.listdir(output_dir)
 
 #Path for FEBio solver executable
-FEBio_path = r"C:/Program Files/bin/febio4.exe" #Path voor Yarran
-#FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe" #Path voor normale mensen
+#FEBio_path = r"C:/Program Files/bin/febio4.exe" #Path voor Yarran
+FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe" #Path voor normale mensen
 
 #Run for every geometry a simulation
 for sim in sorted(output_list):

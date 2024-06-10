@@ -377,10 +377,6 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
         velocity_l.text = 'velocityprofile' + str(num_frames)
         velocity_l.tail = '\n\t\t\t\t'
 
-    """rim_pressure = ET.SubElement(new_load, 'prescribe_rim_pressure')
-        rim_pressure.text('1')
-        rim_pressure.tail = '\n\t\t\t\t' """
-
     for i in range(len(velocity_profile)):          #for the amount of velocity profiles, add different loads
         add_loads(i + 1)
     #-------------------------------------------------------------------------------------------------------------------------
