@@ -40,6 +40,8 @@ FEBio_parameters = dict(
     fluid_dilatation = False,
     fluid_volume_ratio = False,
     
+    vtk = True,
+
     #fluidconstants
     materialtype = 'fluid',
     density = 1000,                                  #kg/m^3
@@ -102,7 +104,7 @@ intp_options = {
     'hard_noslip': False}       # check if no-slip condition on walls is met
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = True
+show_plot = False
 
 #--------------------------------------------------------------------------------------------------------------------------
 # End of setup
@@ -147,7 +149,7 @@ i = 0
 retry = 0
 
 while i <= (n_geometries - 1):    #Creates an output folder for specific case, based on the input folder name
-    try:   
+    if True:   
         input_folder = osp.join(input_dir, input_list[i])
         output_name = f'0{i}_Result_{input_list[i]}'
         output_folder = osp.join(output_dir, output_name)
@@ -371,7 +373,7 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
         i += 1
 
 
-    except Exception as e:
+"""except Exception as e:
         if "ERROR:root:Unsupported data type: vtktypeint32" in str(e):         #python gives an error here but it doesnt matter
             print("Ignoring unsupported data type error.")
         else:
@@ -379,10 +381,10 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
             log_folder = osp.join(file_dir, r'log\failed')
             ut.save_string_to_file('an unknown error has occured. Check if directories and input are set up correctly', osp.join(log_folder, f'unknown_error_{input_list[i]}'))
             i += 1
-            continue
+            continue """
 #-----------------------------------------Start automatic simulation workflow-------------------------------------------------
 #Deletes the temporary folder (might want to modify it to only delete the files)
-shutil.rmtree(temp_dir)
+#shutil.rmtree(temp_dir)
 #----------------------------------------------------------------------------------------------------------------------------
 # FEBio Run
 #----------------------------------------------------------------------------------------------------------------------------

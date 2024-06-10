@@ -21,7 +21,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     zerofluidvelocity_z = True
 
     #SimulationControl
-    analysis = 'DYNAMIC'
+    analysis = 'DYNAMIC'                    #no assumed steady state
     plot_zero_state = 0
     plot_range = 0,-1
     plot_level = 'PLOT_MAJOR_ITRS'
@@ -98,7 +98,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     tree = ET.parse(osp.join(file_dir, r'template_xml.feb'))
     root = tree.getroot()
 
-    print('emptying .xml')
+    
     #remove pre-existing nodes and elements
     Nodes_to_remove = []
     for element in root.iter('node'):               # Traverse the tree to find the element to edit
@@ -113,7 +113,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     for element in elements_to_remove:
         Elem.remove(element)                       # Remove collected elements
 
-    print('emptying surfaces')
+   
 
 
     Surface = root.find("./Mesh/Surface[@name='FluidNormalVelocity1']")
@@ -138,10 +138,6 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
             loadcontroller.remove(element)
 
     
-    print('emptied.xml')
-
-
-
     print('adding nodes and elements')
     # Add our own meshnodes to the file as XML elements
     nodes_list = []
@@ -189,6 +185,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     #-------------------------------------------------------------------------------------------------------------------------
     # Add loadcurves
     # ------------------------------------------------------------------------------------------------------------------------
+    print('starting loadcontroller')
     #amplification factor of the load as loadcurve
     def loadcurve(interpolate,extend, time_steps, step_size,cycle, root, t_start, t_end, n):
         loadcurve_list = np.zeros((time_steps, 2))
@@ -256,7 +253,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     for i in range(profiles):
         loadcurve(FEBio_parameters['interpolate'], extend, FEBio_parameters['time_steps'], FEBio_parameters['step_size'],cycle, root, (cycle/profiles)*i, (cycle/profiles)*(i+1), i +1)
     
-    print('finished loadcontroller')
+    
 
     #-------------------------------------------------------------------------------------------------------------------------
     # Boundary conditions
@@ -348,8 +345,8 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
         new_profile.set('data_type', "vec3")
         new_profile.set('surface', "FluidNormalVelocity1")
         new_profile.tail = '\n\t\t\t'
-
-
+        
+        
         Element = root.find(f'.//MeshData/SurfaceData[@name ="{profile_name}"]')
         if Element is not None:
             for vel in profile_list:
@@ -380,6 +377,10 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
         velocity_l.text = 'velocityprofile' + str(num_frames)
         velocity_l.tail = '\n\t\t\t\t'
 
+    """rim_pressure = ET.SubElement(new_load, 'prescribe_rim_pressure')
+        rim_pressure.text('1')
+        rim_pressure.tail = '\n\t\t\t\t' """
+
     for i in range(len(velocity_profile)):          #for the amount of velocity profiles, add different loads
         add_loads(i + 1)
     #-------------------------------------------------------------------------------------------------------------------------
@@ -391,13 +392,7 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
         element_to_edit = root.find(f"./{parent}/{variable}") # Find the XML element based on the provided 'place' and 'variable'
         if element_to_edit is not None:                     # Check if the element is found
             element_to_edit.text = value              # Set the text content of the element to 'kwaliteit'
-        else:
-            """element_to_edit = root.find(f"./{parent}")   #weet niet zeker of dit gaat werken omdat de volgorde van variablen uit zou kunnen maken
-            element_name = ET.Element(variable)
-            element_to_edit.tail = '\n\t\t'
-            element_to_edit.append(element_name)
-            element_to_edit.text = value """
-            
+        else:            
             print(f"Element '{variable}' under '{parent}' not found.")
         return
 
@@ -534,10 +529,11 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     # Output
     # ------------------------------------------------------------------------------------------------------------------------
     def outputs(output):                                                #create subelement under the outputs
-        output_main = root.find('.//Output/plotfile[@type="febio"]')
-        new_output = ET.SubElement(output_main, 'var')
-        new_output.set('type', f"{output}")
-        new_output.tail = '\n\t\t'
+        output_main = root.find('.//Output/plotfile')
+        if output_main is not None:
+            new_output = ET.SubElement(output_main, 'var')
+            new_output.set('type', f"{output}")
+            new_output.tail = '\n\t\t'
         return
 
     #create the wanted ouputs
@@ -562,6 +558,9 @@ def xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_profile, file_di
     if FEBio_parameters['fluid_volume_ratio'] == True:
         outputs('fluid volume ratio')
 
+    if FEBio_parameters['vtk'] == True:
+        plotfile = root.find('.//Output/plotfile')
+        plotfile.set('type', 'vtk' )
 
     #create FEBio file
     tree.write(osp.join(output_dir, r'simulation.feb'), encoding='ISO-8859-1', xml_declaration=True,)
