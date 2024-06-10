@@ -61,7 +61,7 @@ def wss_cut_and_hist(maxrange=50):
         print('90:', np.percentile(wss,90))
     
         # Plot result
-        block[i].plot(scalars='wss', clim=[0, maxrange], text=filenames[i])
+        block[i].plot(scalars='wss', clim=[0, maxrange], text=filenames[i], scalar_bar_args={'title': 'wss [Pa]'})
     return block
 
 def wss_simple(maxrange=50):
@@ -102,4 +102,4 @@ def wss_simple(maxrange=50):
         block[i].plot(scalars='wss', clim=[0,maxrange], text=filenames[i], scalar_bar_args={'title': 'wss [Pa]'})
     return
 
-wss_simple(100)
+wss_cut_and_hist(100)

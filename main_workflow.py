@@ -16,6 +16,7 @@ from capping import cap
 import identification as id
 from tkinter import Tk
 from tkinter.filedialog import askdirectory
+import time
 import mapping
 import xml.etree.ElementTree as ET
 import subprocess
@@ -145,9 +146,10 @@ print('Setup done')
 
 i = 0
 retry = 0
-
+runtimes = []
 while i <= (n_geometries - 1):    #Creates an output folder for specific case, based on the input folder name
     try:   
+        start = time.time()
         input_folder = osp.join(input_dir, input_list[i])
         output_name = f'0{i}_Result_{input_list[i]}'
         output_folder = osp.join(output_dir, output_name)
@@ -368,6 +370,9 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
         #Create a solver compatible file based on the 3D-mesh and meshing parameters
         feb.xml_creator(tetmesh, id_inlet, id_outlet, id_wall, velocity_mapped, file_dir, output_folder, FEBio_parameters)
 
+        #Add preprocessing runtime to runtime array
+        runtimes.append(time.time()-start)
+        print('Preprocessing took:', runtimes[-1], 's')
         i += 1
 
 
@@ -375,11 +380,15 @@ while i <= (n_geometries - 1):    #Creates an output folder for specific case, b
         if "ERROR:root:Unsupported data type: vtktypeint32" in str(e):         #python gives an error here but it doesnt matter
             print("Ignoring unsupported data type error.")
         else:
-            print('an error has occured')                           #all the other errors
+            print('an error has occured:')                           #all the other errors
+            print(e)
             log_folder = osp.join(file_dir, r'log\failed')
             ut.save_string_to_file('an unknown error has occured. Check if directories and input are set up correctly', osp.join(log_folder, f'unknown_error_{input_list[i]}'))
             i += 1
             continue
+
+print('Preprocessing per case took [s]:')
+print(runtimes)
 #-----------------------------------------Start automatic simulation workflow-------------------------------------------------
 #Deletes the temporary folder (might want to modify it to only delete the files)
 shutil.rmtree(temp_dir)
