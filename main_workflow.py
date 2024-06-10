@@ -27,9 +27,9 @@ import shutil
 # Setup
 #----------------------------------------------------------------------------------------------------------------------------
 FEBio_parameters = dict(
-    hr = 100,             #heartrate in bpm for cycle time
+    hr = 100,                                       #heartrate in bpm for cycle time
     
-    #outputs
+    #outputs of the FEBio simulation, set all required data to True
     displacement = False,
     fluid_pressure = False,
     nodal_fluid_velocity = False,
@@ -41,51 +41,51 @@ FEBio_parameters = dict(
     fluid_dilatation = False,
     fluid_volume_ratio = False,
     
-    vtk = True,
+    vtk = True,             #Output to VTK instead of .xplt, set to true to use postprocessing functionality
 
     #fluidconstants
     materialtype = 'fluid',
-    density = 1000,                                  #kg/m^3
-    k = 2200000,                                     #bulkmodulus
+    density = 1000,                                 #kg/m^3
+    k = 2200000,                                    #bulkmodulus
     viscoustype = "Newtonian fluid",
-    kappa = 1,                                       #bulk viscosity 
-    mu = 0.056,                                      #shear viscosity)
+    kappa = 1,                                      #bulk viscosity 
+    mu = 0.056,                                     #shear viscosity)
     
     #simulationcontrol
-    time_steps = 1200,                               #initial time steps, changes towards dtmax     
-    step_size = 0.001,                               #seconds
-    dtmin = 0,
+    time_steps = 1200,                              #initial time steps, changes towards dtmax     
+    step_size = 0.001,                              #seconds
+    dtmin = 0,                                      #min timestepsize
     dtmax = 0.01,                                   #max timestepsize
 
-    #loadcontroller
-    interpolate = 'LINEAR')                          #can be'STEP',  'LINEAR' or 'SMOOTH'
+    #loadcontroller interpolation
+    interpolate = 'LINEAR')                         #can be'STEP',  'LINEAR' or 'SMOOTH'
     
     #additional FEBio parameters can be changed in febioxml.py if needed
 
 #Meshing parameters
-max_retry = 2
+max_retry = 2               #Maximum number of retries for wall surface remeshing if quality is too low after volume mesh
 
-mmg_parameters = {
-    'mesh_density': '0.1', #hausdorf parameter of mmg, defines amount of added detail at curvature
-    'sizing': '1', #forces similarly sized poly's, legacy option (used for stitching), can possibly be dropped
-    'detection angle': '45'}
+mmg_parameters = {          #Surface meshing parameters
+    'mesh_density': '0.1',  #hausdorf parameter of mmg, defines amount of added detail at curvature
+    'sizing': '1',          #forces similarly sized poly's, legacy option (used for stitching), can possibly be dropped
+    'detection angle': '45'}#Sharp angle detection of mmg, preserves the edges at the in- and outlet
 
-mmg3d_parameters = {
+mmg3d_parameters = {        #Volume meshing parameters
     'hausd': '0.1',
     'detection angle': '45'}
 
-mmg3d_sol_parameters = {
+mmg3d_sol_parameters = {    #Paremeters for local mesh refinement (used to create an extra fine boundary layer)
     'bl_thickness': 1,
-    'bl_edgelength': 1,
-    'edgelength': 15}
+    'bl_edgelength': 1,     #Max edgelength within the boundary layer
+    'edgelength': 15}       #Max edgelength in the interior
 
-tetgen_parameters = dict(
+tetgen_parameters = dict(   #Parameters for initial volume mesh, not very important, as long as the mesh is finer than the bl_thickness
     order=1, 
     mindihedral=20, 
     minratio=1.5,
     nobisect=True,
     fixedvolume=True,
-    maxvolume=1)
+    maxvolume=1)            #Controlls the density
 
 #Run qualifications (case will be discarded if not met)
 max_elements = 1000000
@@ -105,7 +105,6 @@ intp_options = {
     'hard_noslip': False}       # check if no-slip condition on walls is met
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = False
 show_plot = False
 
 #--------------------------------------------------------------------------------------------------------------------------
@@ -151,7 +150,8 @@ i = 0
 retry = 0
 runtimes = []
 while i <= (n_geometries - 1):    #Creates an output folder for specific case, based on the input folder name
-    if True:   
+    if True:
+        start = time.time()   
         input_folder = osp.join(input_dir, input_list[i])
         output_name = f'0{i}_Result_{input_list[i]}'
         output_folder = osp.join(output_dir, output_name)
