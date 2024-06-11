@@ -37,14 +37,23 @@ def wss_cut_and_hist(maxrange=50):
         inlet = split_surf[int(inlet_index)].extract_surface()
 
         # Cut at horizontal point
-        wall = cutting.post_cutter(inlet, wall, flip_norm=True)
+        wall = cutting.post_cutter(inlet, wall, flip_norm=True).extract_surface()
 
-        # Add array containing max. wss
+        """# Add array containing max. wss
         tensors = wall['fluid_stress'].reshape((wall['fluid_stress'].shape[0],3,3))
         eig = np.linalg.eigvals(tensors)
         min = eig.min(axis=1)
         max = eig.max(axis=1)
         wss = (max-min)/2
+        wall['wss']=wss
+        block.append(wall) """
+
+        # Add array containing max. wss
+        tensors = wall['fluid_stress'].reshape((wall['fluid_stress'].shape[0],3,3))
+        wall = wall.compute_normals(point_normals=False)
+        Tn = np.einsum('ijk,ik->ij', tensors, wall['Normals']) # Matrices * normals
+        sigma_n = np.sum(Tn * wall['Normals'], axis=1) # Stress vectors * normals
+        wss = abs((np.linalg.norm(Tn, axis=1)**2 - sigma_n**2))**0.5 # Extremely small values produce rounding errors
         wall['wss']=wss
         block.append(wall)
 
@@ -93,7 +102,7 @@ def wss_simple(maxrange=50):
         wall = wall.compute_normals(point_normals=False)
         Tn = np.einsum('ijk,ik->ij', tensors, wall['Normals']) # Matrices * normals
         sigma_n = np.sum(Tn * wall['Normals'], axis=1) # Stress vectors * normals
-        wss = ((np.linalg.norm(Tn, axis=1)**2 - sigma_n**2))**0.5 # Extremely small values produce rounding errors
+        wss = abs((np.linalg.norm(Tn, axis=1)**2 - sigma_n**2))**0.5 # Extremely small values produce rounding errors
         wall['wss']=wss
         block.append(wall)
     

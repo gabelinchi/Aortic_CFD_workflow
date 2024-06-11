@@ -41,7 +41,8 @@ FEBio_parameters = dict(
     fluid_dilatation = False,
     fluid_volume_ratio = False,
     
-    vtk = False,                                    
+    vtk = True,                                     #Output type, set to True to use postprocessing script,
+                                                    #set to false to view the output in FEBio studio
 
     #fluidconstants
     materialtype = 'fluid',
@@ -52,15 +53,19 @@ FEBio_parameters = dict(
     mu = 0.056,                                     #shear viscosity)
     
     #simulationcontrol
-    time_steps = 1200,                              #initial time steps, changes towards dtmax     
+    time_steps = 600,                              #initial time steps, changes towards dtmax     
     step_size = 0.001,                              #seconds
     dtmin = 0,                                      #min timestepsize
     dtmax = 0.01,                                   #max timestepsize
 
     #loadcontroller interpolation
     interpolate = 'LINEAR')                         #can be'STEP',  'LINEAR' or 'SMOOTH'
+
+#Path for FEBio solver executable
+FEBio_path = r"C:/Program Files/bin/febio4.exe"                 #Path 1
+#FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe"   #Path 2
     
-    #additional FEBio parameters can be changed in febioxml.py if needed
+#additional FEBio parameters can be changed in febioxml.py if needed
 
 #Meshing parameters
 max_retry = 2               #Maximum number of retries for wall surface remeshing if quality is too low after volume mesh
@@ -105,7 +110,7 @@ intp_options = {
     'hard_noslip': False}       # check if no-slip condition on walls is met
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = False
+show_plot = True
 
 #--------------------------------------------------------------------------------------------------------------------------
 # End of setup
@@ -400,10 +405,6 @@ shutil.rmtree(temp_dir)
 
 #Grab the names of the output folders
 output_list = os.listdir(output_dir)
-
-#Path for FEBio solver executable
-#FEBio_path = r"C:/Program Files/bin/febio4.exe" #Path voor Yarran
-FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe" #Path voor normale mensen
 
 #Run for every geometry a simulation
 for sim in sorted(output_list):
