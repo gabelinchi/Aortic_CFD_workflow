@@ -2,6 +2,7 @@ import numpy as np
 import pyvista as pv
 import utils as ut
 import matplotlib.pyplot as pyplt
+import os.path as osp
 
 
 #main function that runs the cutter script
@@ -126,7 +127,7 @@ def centerline(inlet, wall, dist=40, flip_norm=False):
     
     return centernodes, centernormals, edgeprofiles, slice_areas
 
-def areaselection(areas):
+def areaselection(areas, min_num):
     '''
     Function that selects the minimal area after the aortic root along the centerline
     :arg1 areas: all areas of the slices along the centerline
@@ -147,8 +148,14 @@ def areaselection(areas):
 
     #Select the smallest area from the second small segment. This should be the constriction after the aortic root
     if len(narrow_segments) > 1:
-        smallest_area = min(narrow_segments[1]) #Gives out of bound error when there is no constriction
+        print('looking for narrow part')
+        smallest_area = min(narrow_segments[min_num]) #Gives out of bound error when there is no constriction
+        smallest_index_temp = np.where(smallest_area == areas)[0]
+        print(smallest_index_temp)
+        """         if smallest_index_temp < 10:
+            smallest_area = min(narrow_segments[2]) """
     else:
+        print('looking for flat part')
         counter = 0 
         window_size = 3
         moving_averages = []
@@ -369,5 +376,62 @@ def aorta_geom():
     pyplt.show()
     return
 
+def cutting_validation(case):
+    path = "C:/Users/Yarran/OneDrive/Uni_Documenten/2023-24/BEP/Code/GIT/Aortic_CFD_workflow/VMTK_test/Geometries/"
+    wall = pv.read(osp.join(path, f'case_{case}/meshes/wall.stl'))
+    inlet = pv.read(osp.join(path, f'case_{case}/meshes/inlet.stl'))
+    vmtkcl = pv.read(osp.join(path, f'case_{case}/meshes/centerline.vtp'))
+
+    perimeters = pv.PolyData()
+    areas_vmtk = []
+    for i in range(50):
+        perimeter = get_clip_perimeter(vmtkcl.points[i],vmtkcl.points[i+4]-vmtkcl.points[i], wall)
+        perimeter_closed = perimeter.delaunay_2d()
+        new_area = perimeter_closed.area
+        areas_vmtk.append(new_area)
+        perimeters += perimeter
+    centerlinedata = centerline(inlet, wall, dist=60)
+    centerlinedata[2].plot()
+    perimeters.plot()
+    areas_ims = centerlinedata[3]
+    index_ims = areaselection(areas_ims, 1)[1]
+    index_vmtk = areaselection(areas_vmtk, 0)[1]
+
+    #Get cut point for IMS
+    normal_ims = ut.average_normal(centerlinedata[1], 4, index_ims)
+    center_ims = centerlinedata[0][index_ims].flatten()
+    ims_perimeter = get_clip_perimeter(center_ims, normal_ims, wall)
+
+    #Get cut point for VMTK
+    normal_vmtk = (vmtkcl.points[index_vmtk+4]-vmtkcl.points[index_vmtk]).flatten()
+    center_vmtk = vmtkcl.points[index_vmtk].flatten()
+    vmtk_perimeter = get_clip_perimeter(center_vmtk, normal_vmtk, wall)
+    print(np.linalg.norm(center_ims-center_vmtk))
+    plt = pv.Plotter()
+    plt.add_mesh(wall, style='wireframe')
+    plt.add_mesh(vmtk_perimeter, color='red', line_width=3, label='VMTK')
+    plt.add_mesh(ims_perimeter, color='green', line_width=3, label='IMS')
+    plt.add_legend()
+    plt.show()
+
+    
+    #wall.save(osp.join(path, r'case_0630/meshes/wall.vtp'))
+    #vmtk_centerline= pv.read('C:/Users/Yarran/OneDrive/Uni_Documenten/2023-24/BEP/VMTK/centerline.vtp')
+    centerlinedata = centerline(inlet, wall, dist=50)
+
+
 #ref_geom()
-aorta_geom()
+#aorta_geom()
+cutting_validation('0630')
+"""
+0069:0.711
+0093:1.092
+0175:1.645
+0221:0.663
+0295:1.144
+0326:1.001
+0358:1.568
+0383:2.446
+0394:1.014
+0630:0.589
+"""

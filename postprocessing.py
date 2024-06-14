@@ -57,4 +57,4 @@ def pp_wss():
         block[i].plot(scalars='wss', clim=[0,50], text=filenames[i])
     return
 
-pp_wss()
+pp_wss(100)

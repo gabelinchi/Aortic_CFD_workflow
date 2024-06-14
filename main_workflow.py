@@ -68,7 +68,7 @@ intp_options = {
 
 
 #Plotting boolean, when True: code generates intermediate plots of workflow
-show_plot = False
+show_plot = True
 
 
 #Create file environment before looping
