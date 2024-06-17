@@ -6,6 +6,7 @@ import identification as id
 from tkinter import Tk
 from tkinter.filedialog import askopenfilenames
 import cutting
+import utils as ut
 
 def wss_cut_and_hist(maxrange=50):
     '''
@@ -19,6 +20,9 @@ def wss_cut_and_hist(maxrange=50):
     vtk_path = askopenfilenames(title='Select VTK file(s)')
     block = pv.MultiBlock()
     filenames = []
+    pos = 'xy'
+    filecount = 1
+
     for filepath in vtk_path:
         vtk = pv.read(filepath).scale([1000,1000,1000]) #Scale the model back to mm
         filename = os.path.basename(filepath)
@@ -26,14 +30,15 @@ def wss_cut_and_hist(maxrange=50):
 
         # Identify surfaces & select largest (wall)
         split_surf = id.identify_surfaces(vtk, 30)
-        lengths = np.empty(len(split_surf))
-        for i in range(len(lengths)):
-            lengths[i] = split_surf[i].number_of_points
-        wall_index = np.argmax(lengths, axis=0)
+        areas = np.empty(len(split_surf))
+        for i in range(len(areas)):
+            areas[i] = split_surf[i].area
+        wall_index = np.argmax(areas, axis=0)
         wall = split_surf[int(wall_index)]
 
         # Select second largest (inlet)
-        inlet_index = np.argmax(np.delete(lengths, wall_index), axis=0)
+        areas[wall_index] = 0
+        inlet_index = np.argmax(areas, axis=0)
         inlet = split_surf[int(inlet_index)].extract_surface()
 
         # Cut at horizontal point
@@ -56,21 +61,50 @@ def wss_cut_and_hist(maxrange=50):
         wss = abs((np.linalg.norm(Tn, axis=1)**2 - sigma_n**2))**0.5 # Extremely small values produce rounding errors
         wall['wss']=wss
         block.append(wall)
+        print('File nr.', filecount,'of',len(vtk_path), 'processed')
+        filecount += 1
 
     for i in range(len(filenames)):
         wss=block[i]['wss']
-        # Print statistics
-        print('Histogram of wss for:', filenames[i])
-        print('(Percentile: Value[Pa])') #Should be pascal (I think :) )
-        print('99:', np.percentile(wss,99))
-        print('98:', np.percentile(wss,98))
-        print('96:', np.percentile(wss,96))
-        print('94:', np.percentile(wss,94))
-        print('92:', np.percentile(wss,92))
-        print('90:', np.percentile(wss,90))
+
+        #Create report text
+        report_text = '''
+--------------------------------------------------------------
+Histogram of wss for: {0}
+'(Percentile: Value[Pa])'
+99: {1}
+98: {2}
+96: {3}
+94: {4}
+92: {5}
+90: {6}
+--------------------------------------------------------------
+'''.format(filenames[i], np.percentile(wss,99), np.percentile(wss,98), np.percentile(wss,96), np.percentile(wss,94), np.percentile(wss,92), np.percentile(wss,90) )
+
+        print(report_text)
+
+        # Save to .txt
+        ut.save_string_to_file(report_text, osp.join(osp.dirname(vtk_path[i]), f'WSS_{filenames[i][:-4]}.txt'))
     
         # Plot result
-        block[i].plot(scalars='wss', clim=[0, maxrange], text=filenames[i], scalar_bar_args={'title': 'wss [Pa]'})
+        #block[i].plot(scalars='wss', clim=[0, maxrange], text=filenames[i], scalar_bar_args={'title': 'wss [Pa]'},
+        #              camera_position=pos, screenshot=osp.join(osp.dirname(vtk_path[i]), f'WSS_plot_{filenames[i][:-4]}.png'))
+
+        # Plot and save camera position
+        cam = pv.Plotter()
+        cam.add_mesh(block[i], clim=[0, maxrange], scalar_bar_args={'title': 'wss [Pa]'}, scalars='wss')
+        cam.add_text(filenames[i])
+        cam.camera_position = pos
+        cam.show()
+        pos = cam.camera_position
+
+
+        # Save screenshot
+        plt = pv.Plotter(off_screen=True)
+        plt.add_mesh(block[i], clim=[0, maxrange], scalar_bar_args={'title': 'wss [Pa]'}, scalars='wss')
+        plt.add_text(filenames[i])
+        plt.camera_position = pos
+        plt.show(screenshot=osp.join(osp.dirname(vtk_path[i]), f'WSS_plot_{filenames[i][:-4]}.png'))
     return block
 
 def wss_simple(maxrange=50):
@@ -84,6 +118,7 @@ def wss_simple(maxrange=50):
     vtk_path = askopenfilenames(title='Select VTK file(s)')
     block = pv.MultiBlock()
     filenames = []
+
     for filepath in vtk_path:
         vtk = pv.read(filepath).scale([1000,1000,1000])
         filename = os.path.basename(filepath)
