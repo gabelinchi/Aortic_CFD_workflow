@@ -62,8 +62,8 @@ FEBio_parameters = dict(
     interpolate = 'LINEAR')                         #can be'STEP',  'LINEAR' or 'SMOOTH'
 
 #Path for FEBio solver executable
-FEBio_path = r"C:/Program Files/bin/febio4.exe"                 #Path 1
-#FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe"   #Path 2
+# FEBio_path = r"C:/Program Files/bin/febio4.exe"                 #Path 1
+FEBio_path = r"C:/Program Files/FEBioStudio2/bin/febio4.exe"   #Path 2
     
 #additional FEBio parameters can be changed in febioxml.py if needed
 
